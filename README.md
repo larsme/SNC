@@ -7,7 +7,7 @@ See the usage section at the bottom if you want to try.*
 
 
 This repo is about creating a small depth completion model where every every weight and every latent can be understood intuitively by humans.
-[^unguided_nconv] [^prob_nconv] have shown [Normalized Convolutions](https://github.com/abdo-eldesokey/nconv-nyu)[^nconv] to be a simple and efficient approach to unguided depth completion.
+[1] [2] have shown [Normalized Convolutions](https://github.com/abdo-eldesokey/nconv-nyu)[3] to be a simple and efficient approach to unguided depth completion.
 This fork improves NConvs to be smaller, faster and involve stronger inductive biases.
 NConvs have a tendency to propagate information across depth discontinuities, which is prevented by smoothness gating in SNC.
 Finally, the following steps are attempted with mixed results:
@@ -18,10 +18,8 @@ Color and reflectance information is seamlessly integrated into the model by app
 
 | Model                  | Validation Loss | MAE          | RMSE          | Delta1         | Delta2         | Delta3         |   Parameters | BatchDuration   |
 |:-----------------------|:----------------|:-------------|:--------------|:---------------|:---------------|:---------------|-------------:|:----------------|
-|
-| NConvCNN [^prob_nconv] | 0.0404 ± 0.0009 | 406 mm ± 11  | 1582 mm ± 21  | 58.18% ± 0.92  | 79.72% ± 0.31  | 88.61% ± 0.26  |          137 | 571 ms ± 66     |
-| NConvCNN+2nd_channel [^prob_nconv]   | 0.0394 ± 0.0005 | 398 mm ± 5   | 1580 mm ± 10  | 57.45% ± 1.15  | 81.78% ± 0.24  | 89.60% ± 0.14  |          481 | 459 ms ± 1      |
-|
+| NConvCNN [2] | 0.0404 ± 0.0009 | 406 mm ± 11  | 1582 mm ± 21  | 58.18% ± 0.92  | 79.72% ± 0.31  | 88.61% ± 0.26  |          137 | 571 ms ± 66     |
+| NConvCNN+2nd_channel [2]   | 0.0394 ± 0.0005 | 398 mm ± 5   | 1580 mm ± 10  | 57.45% ± 1.15  | 81.78% ± 0.24  | 89.60% ± 0.14  |          481 | 459 ms ± 1      |
 | NC                     | 0.0383 ± 0.0000 | 379 mm ± 1   | 1655 mm ± 3   | 60.40% ± 0.04  | 80.97% ± 0.02  | 89.58% ± 0.02  |           74 | 1 ms ± 0        |
 | NC+filter              | 0.0323 ± 0.0011 | 337 mm ± 8   | 1462 mm ± 27  | 60.67% ± 0.17  | 81.52% ± 0.22  | 90.14% ± 0.18  |           74 | 33 ms ± 1       |
 | SNC                    | 0.0252 ± 0.0004 | 284 mm ± 3   | 1332 mm ± 18  | 64.68% ± 0.48  | 85.38% ± 0.41  | 92.57% ± 0.18  |          480 | 26 ms ± 0       |
@@ -32,26 +30,22 @@ Color and reflectance information is seamlessly integrated into the model by app
 All experiments in this readme use the same learning rate etc as the NConvCNN baseline.
 The largest possible bachsize is used each time for faster training; I use a NVIDEA GeForce GTX 1660.
 The full parameter settings and experiment metrics can be found in the experiment folder.
-In this table, all models were trained for 20 epochs with 10k examples per batch.*
-<img src="https://render.githubusercontent.com/render/math?math=
-               \text{Delta}_i \coloneqq \mean_{d{j,\text{gt}}>0} \big( \max ( \frac{d_j}{d_{j,\text{gt}}},\frac{d_{j,\text{gt}}}{d_j} ) < 1.01^i \big)">
+In this table, all models were trained for 20 epochs with 10k examples per batch.*\
+<img src="https://render.githubusercontent.com/render/math?math=\text{Delta}_i \coloneqq \mean_{d{j,\text{gt}}>0} \big( \max ( \frac{d_j}{d_{j,\text{gt}}},\frac{d_{j,\text{gt}}}{d_j} ) < 1.01^i \big)">
 
 
 # Streamlining NConvs
 
-This repo is based on normalized convolutions (NConvs), which were first introduced by [^nconv] and applied to depth completion by [^unguided_nconv]. 
+This repo is based on normalized convolutions (NConvs), which were first introduced by [3] and applied to depth completion by [1]. 
 I recommend these works for a deeper theoretical background.
 NConvs jointly propagate estimates of pixel values and respective confidences through each layer.
 No further nonlinearities are required.
 In depth completion, NConvs propagate estimates of depth <img src="https://render.githubusercontent.com/render/math?math=d"> and confidences  <img src="https://render.githubusercontent.com/render/math?math=\text{cd}">, which are initialized with 1 where an estimate is present.
 <img src="https://render.githubusercontent.com/render/math?math=\text{cd}"> is propagated as a weighted mean, keeping the total amount of confidence approximately constant throughout all layers: \
-     <img src="https://render.githubusercontent.com/render/math?math=
-               \text{cd}_i' \coloneqq \frac{\sum_j w_{ij} \text{cd}_j}{\sum_j w_{ij}}">\
-     <img src="https://render.githubusercontent.com/render/math?math=
-               w_{ij}  \geq 0">\
+     <img src="https://render.githubusercontent.com/render/math?math=\text{cd}_i' \coloneqq \frac{\sum_j w_{ij} \text{cd}_j}{\sum_j w_{ij}}">\
+     <img src="https://render.githubusercontent.com/render/math?math=w_{ij}  \geq 0">\
 Simultaneously, the same weighted mean is modified by <img src="https://render.githubusercontent.com/render/math?math=\text{cd}"> to emphasize confident estimates and propagate <img src="https://render.githubusercontent.com/render/math?math=d"> with a learned offset: \
-     <img src="https://render.githubusercontent.com/render/math?math=
-               d_{i,b}' \coloneqq \frac{\sum_j w_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j w_{ij}} %2B b"> \
+     <img src="https://render.githubusercontent.com/render/math?math=d_{i,b}' \coloneqq \frac{\sum_j w_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j w_{ij}} %2B b">\
 *Stability terms to prevent divisions by 0 are exluded in this and all following equations.*
 
 
@@ -64,36 +58,21 @@ I refer to the resulting CNN as NC.
 
   1. (Re)moving bias parameters \
      It is mathematically equivalent to move the biases out of the convolutions and towards the end of the network, where they can be combined into a single parameter.\
-  <img src="https://render.githubusercontent.com/render/math?math=
-           d_{i,b}'' = \frac{\sum_j w_{ij}' d_{i,b}' \text{cd}_j'}{\sum_j \text{cd}_j' w_{ij}'} %2B b'
-           = \frac{\sum_j w_{ij}' (\frac{\sum_j w_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j w_{ij}} %2B b) \text{cd}_j'}{\sum_j \text{cd}_j' w_{ij}'} %2B b'
-           = \frac{\sum_j w_{ij}' \frac{\sum_j w_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j w_{ij}} \text{cd}_j'}{\sum_j \text{cd}_j' w_{ij}'} %2B b %2B b'
-           \coloneqq \frac{\sum_j w_{ij}' d_j' \text{cd}_j'}{\sum_j \text{cd}_j' w_{ij}'} %2B b %2B b'
-           =  d_i'' %2B b %2B b'"> \
+  <img src="https://render.githubusercontent.com/render/math?math=d_{i,b}'' = \frac{\sum_j w_{ij}' d_{i,b}' \text{cd}_j'}{\sum_j \text{cd}_j' w_{ij}'} %2B b' = \frac{\sum_j w_{ij}' (\frac{\sum_j w_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j w_{ij}} %2B b) \text{cd}_j'}{\sum_j \text{cd}_j' w_{ij}'} %2B b' = \frac{\sum_j w_{ij}' \frac{\sum_j w_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j w_{ij}} \text{cd}_j'}{\sum_j \text{cd}_j' w_{ij}'} %2B b %2B b' \coloneqq \frac{\sum_j w_{ij}' d_j' \text{cd}_j'}{\sum_j \text{cd}_j' w_{ij}'} %2B b %2B b'  =  d_i'' %2B b %2B b'"> \
      Besides this one remaining offset, SNC has the option to specialize biases towards different confidences or locations.
     These can be either inluded as offsets or integrated via 1x1 NConvs as independend estimates and confidences.
     Based on the rationale that most input data is accurate, NC does not use any bias parameters in the name of interpretability.
     When an error is observed, I will attempt to adress it at the source.
   2. Speedup\
      Precomputing the confidence denominator \
-     <img src="https://render.githubusercontent.com/render/math?math=
-           \hat{w}_j \coloneqq \frac{w_{ij}}{\sum_k w_{ij}}"> \
-     <img src="https://render.githubusercontent.com/render/math?math=
-               \text{cd}_i' = \frac{\sum_j w_{ij} \text{cd}_j}{\sum_j w_{ij}}
-                   = {\sum_j \hat{w}_{ij} \text{cd}_j}"> \
-     <img src="https://render.githubusercontent.com/render/math?math=
-               d_i' = \frac{\sum_j w_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j w_{ij}}
-                   = \frac{\sum_j \hat{w}_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j \hat{w}_{ij}}
-                   = \frac{\sum_j \hat{w}_{ij} d_j \text{cd}_j}{c'}"> \
+     <img src="https://render.githubusercontent.com/render/math?math=\hat{w}_j \coloneqq \frac{w_{ij}}{\sum_k w_{ij}}"> \
+     <img src="https://render.githubusercontent.com/render/math?math=\text{cd}_i' = \frac{\sum_j w_{ij} \text{cd}_j}{\sum_j w_{ij}} = {\sum_j \hat{w}_{ij} \text{cd}_j}"> \
+     <img src="https://render.githubusercontent.com/render/math?math=d_i' = \frac{\sum_j w_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j w_{ij}} = \frac{\sum_j \hat{w}_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j \hat{w}_{ij}} = \frac{\sum_j \hat{w}_{ij} d_j \text{cd}_j}{c'}"> \
      and skipping the denominators until the last layer \
-     <img src="https://render.githubusercontent.com/render/math?math=
-          \text{dcd}_i' \coloneqq  d_i' \text{cd}_i'  =  \frac{\sum_j \hat{w}_{ij} d_j \text{cd}_j}{\text{cd}_i'} \text{cd}_i'
-                = \sum_j \hat{w}_{ij} d_j \text{cd}_j
-               =  \sum_j \hat{w}_{ij} \text{dcd}_j"> \
+     <img src="https://render.githubusercontent.com/render/math?math=\text{dcd}_i' \coloneqq  d_i' \text{cd}_i'  =  \frac{\sum_j \hat{w}_{ij} d_j \text{cd}_j}{\text{cd}_i'} \text{cd}_i' = \sum_j \hat{w}_{ij} d_j \text{cd}_j =  \sum_j \hat{w}_{ij} \text{dcd}_j"> \
      removes unnecessary divisions.
      Both values can now be concatenated to a single tensor, reducing NConvs to ordinary convolutions inside the network.\
-     <img src="https://render.githubusercontent.com/render/math?math=
-           x_i' \coloneqq \begin{pmatrix}\text{dcd}_i'\\ \text{cd}_i'\end{pmatrix} = \sum_j \hat{w}_{ij} x_j">
+     <img src="https://render.githubusercontent.com/render/math?math=x_i' \coloneqq \begin{pmatrix}\text{dcd}_i'\\ \text{cd}_i'\end{pmatrix} = \sum_j \hat{w}_{ij} x_j">
   3. NConv based Up- and Downsampling\
      This step is mostly motivated by the aestethics of constructing NC from NConvs only via convolutions, strided convolutions and deconvolutions.
      It requires more parameters and did not affect predictions a lot in my experiments compared to tested alternatives.
@@ -104,16 +83,16 @@ I refer to the resulting CNN as NC.
      Because it is entirely linear, it is equivalent to a single channeled version, which would also hold for some NC ensembles.
      Figure 1 shows how a single channel trains more effectively than two.
      Linearity does not hold for SNC, the version of NC which incorporates smoothness.
-     For NConvs with multiple channels, I decrease the parameter count through sparable convolutions[^mobilenet_v1] .
+     For NConvs with multiple channels, I decrease the parameter count through sparable convolutions[4] .
      While these reduce the number of flops on paper, they also slow prediction speed on GPU, which is rectified by recombining their weights beforehand.
   5. Symmetric weight sharing \
-     One of the most prominent dataset augmentation techniques in vision is horizontal flipping, which models like [^monodpth2] also employ during inference to average with the mirrored prediction.
+     One of the most prominent dataset augmentation techniques in vision is horizontal flipping, which models like [8] also employ during inference to average with the mirrored prediction.
      NC instead enforces symmetry explicitly through weigh sharing in each layer, almost halfing the spatial parameter count instead of doubling computation cost.
      In models with multiple channels this also removes the possibility of multiple asymmetric but mirrored channels, which is not a problem here.
 Figure 1 shows a more effective training with weight sharing.
   6. Using online limits\
      NConvs require all weights to be positive.
-     [^guided_nconv] achieve this by applying a softplus calculation outside the learning procedure.
+     [5] achieve this by applying a softplus calculation outside the learning procedure.
      This effectively introduces a lower bound for model weights as they are decreased according to their gradients and increased again by the softplus until a balance is reached.
      After including the function into the forward pass, the model is able to learn sparse kernels.
 
@@ -125,7 +104,7 @@ Figure 1 shows a more effective training with weight sharing.
         *Old version of SNC which still had the same layer layout as NConvCNN.*
 
    7. Simplifying the Layer Structure \
-      Among other things, the previous step allowed the old version of SNC above to self-proon the first two expensive, full resolution layers of the inherited NConvCNN[^unguided_nconv] layout.
+      Among other things, the previous step allowed the old version of SNC above to self-proon the first two expensive, full resolution layers of the inherited NConvCNN[1] layout.
       NC instead employs a single initial 5x5 convolution, followed by three alternating, weight sharing strided 4x4 and regular 3x3 Nconvs in the encoder and alternating 4x4 deconvolutions and 3x3 NConvs in the decoder.
       The initial 5x5 Nconv is used because it offers an improved initial smoothness estimate in SNC and I wanted to keep the layout consistent between models.
    8. Inference Weight Precomputation\
@@ -136,7 +115,7 @@ Figure 1 shows a more effective training with weight sharing.
       Since the weights are fixed during inference, the result can be stored and reused instead.
       A new model could also be initialized with the learned weights and finetuned without my parameter reducing assumptions.
    9. Loss function\
-       NC adopts the smooth L1 loss from [^unguided_nconv] but discards their confidence term.
+       NC adopts the smooth L1 loss from [1] but discards their confidence term.
        While this term decays over time, non-gated NC performs better without it in figure 1, even when confidence weightied metrics are considered, suggesting its regularizing influence is not needed for smaller models.
        On full NC it does improve confidence based metrics, but also slows down training.
        Similarly, the MSE loss improved the RMSE metric at the cost of the rest.
@@ -161,29 +140,22 @@ Filling these gaps with fixed or shared weights on lower layers would half the l
 Because its depth propagation is independent of depth values, NC has no way to distinguish between planes and depth discontinuities if sparse pixel locations are the same.
 It is forced to learn a compromise between both situations and predict fuzzy edges.
 SNC incorporates smoothness gating instead: \
-<img src="https://render.githubusercontent.com/render/math?math=
-x_i' = \sum_j \hat{w}_{ij} s_{ij} x_j"> \
-<img src="https://render.githubusercontent.com/render/math?math=
-s_{ij} = \prod_{k}^{i \rightarrow j} s_k"> \
-<img src="https://render.githubusercontent.com/render/math?math=
-s_{k} \in [0,1]"> \
+<img src="https://render.githubusercontent.com/render/math?math=x_i' = \sum_j \hat{w}_{ij} s_{ij} x_j"> \
+<img src="https://render.githubusercontent.com/render/math?math=s_{ij} = \prod_{k}^{i \rightarrow j} s_k"> \
+<img src="https://render.githubusercontent.com/render/math?math=s_{k} \in [0,1]"> \
 <img src="https://render.githubusercontent.com/render/math?math=s_{ij}"> is the combined smoothness along a path from i to j.
 By predicting a smoothness <img src="https://render.githubusercontent.com/render/math?math=s_{k} = 0">, SNC can stop itself from propagating information across discontinuities and object borders.
 By predicting <img src="https://render.githubusercontent.com/render/math?math=s_{k} = 1">, it is free to interpolate from one side of k to the other.
 The conditions of a normalized convolution are fulfilled as long as <img src="https://render.githubusercontent.com/render/math?math=s_{ij}"> is never negative.
 When merging upsampled depths and skip connection via 1x1 Nconv, the former are smoothness gated to prefer higher resolution depths near edges.
 
-[^s_from_d] calculate edges in dense but noisy depth estimates by dividing local minima by local maxima.
-This fits the definition of <img src="https://render.githubusercontent.com/render/math?math=s_{k}"> and consists of a sparsity invariant operations[^kitti_depth].
+[10] calculate edges in dense but noisy depth estimates by dividing local minima by local maxima.
+This fits the definition of <img src="https://render.githubusercontent.com/render/math?math=s_{k}"> and consists of a sparsity invariant operations[6].
 It is adapted to NConvs by searching for weighted extrema and outputting a dedicated confidence: \
-<img src="https://render.githubusercontent.com/render/math?math=
-j_{\text{max},k} = \text{argmax}_{j \in U(k)} \text{cd}_j d_j"> \
-<img src="https://render.githubusercontent.com/render/math?math=
-j_{\text{min},k} = \text{argmax}_{j \in U(k)} \frac{\text{cd}_j}{d_j}"> \
-<img src="https://render.githubusercontent.com/render/math?math=
-s_k = \big(\frac{d_{j_{\text{min},k}}}{d_{j_{\text{max},k}}}\big )^{w_\text{pow}}">  \
-<img src="https://render.githubusercontent.com/render/math?math=
-\text{cs}_k = \text{cd}_{j_{\text{min},k}} \text{cd}_{j_{\text{max},k}}"> \
+<img src="https://render.githubusercontent.com/render/math?math=j_{\text{max},k} = \text{argmax}_{j \in U(k)} \text{cd}_j d_j"> \
+<img src="https://render.githubusercontent.com/render/math?math=j_{\text{min},k} = \text{argmax}_{j \in U(k)} \frac{\text{cd}_j}{d_j}"> \
+<img src="https://render.githubusercontent.com/render/math?math=s_k = \big(\frac{d_{j_{\text{min},k}}}{d_{j_{\text{max},k}}}\big )^{w_\text{pow}}">  \
+<img src="https://render.githubusercontent.com/render/math?math=\text{cs}_k = \text{cd}_{j_{\text{min},k}} \text{cd}_{j_{\text{max},k}}"> \
 where  <img src="https://render.githubusercontent.com/render/math?math=w_\text{pow}"> represents a trainable sensitivity to depth deviations in each layer.
 
 Like depth in NC, this version of smoothness is further interpolated with NConvs and thus remains one step ahead of the depth propagation.
@@ -237,25 +209,21 @@ In contrast to NC, SNC is not linear internally and benefits from multiple chann
 It could e.g. use one depth channel to look ahead, calculate better smoothness estimates and gate the slower second depth channel.
 SCN2 uses two SNC modules sequentially, where the first is trained alone and frozen.
 The second module uses the following inputs: \
-<img src="https://render.githubusercontent.com/render/math?math=
-d_j'' = d_j"> \
-<img src="https://render.githubusercontent.com/render/math?math=
-d_j'' = \text{cd}_j \min({\frac{d_j'}{d_j},1})^{w_{\text{pow_d}}}"> \
-<img src="https://render.githubusercontent.com/render/math?math=
-s_j'' = s_j'"> \
-<img src="https://render.githubusercontent.com/render/math?math=
-\cs_j'' = \cs_j'^{w_{\text{pow_s}}}"> \
+<img src="https://render.githubusercontent.com/render/math?math=d_j'' = d_j"> \
+<img src="https://render.githubusercontent.com/render/math?math=d_j'' = \text{cd}_j \min({\frac{d_j'}{d_j},1})^{w_{\text{pow_d}}}"> \
+<img src="https://render.githubusercontent.com/render/math?math=s_j'' = s_j'"> \
+<img src="https://render.githubusercontent.com/render/math?math=\cs_j'' = \cs_j'^{w_{\text{pow_s}}}"> \
 where ' marks outputs of the first module.
 
 
-![Streaming Perception](Images/workspace_SNC_SNC_run0000_ep0020_streaming_perception_4149.png) \
-![Streaming Perception](Images/workspace_SNC_SNC2_run0000_ep0020_streaming_perception_4149.png) \
+![Streaming Perception](images/workspace_SNC_SNC_run0000_ep0020_streaming_perception_4149.png)\
+![Streaming Perception](images/workspace_SNC_SNC2_run0000_ep0020_streaming_perception_4149.png)\
 *Figure 6: Streaming Perception \
 Latent space of every second layer of both SNC2 modules; the first of which is equal to SNC.
 The shown smoothness is the product over all edge directions while smoothness confidence is shown as a mean.*
 
 
-[^streaming_perception] evaluate model outputs on both accuracy and latency by integrating updated prediction errors over time.
+[7] evaluate model outputs on both accuracy and latency by integrating updated prediction errors over time.
 In a similar settting SNC would perform better than its prediction speed suggests,
 because every layer of the model outputs updated predictions and confidences like in figure 6, despite only involving the depth ouput in a loss.
 SNC can be thought of as a recurrent ensemble choosing different expert over time for different resolutions.
@@ -297,7 +265,7 @@ Neither is able to distinguish real holes in the image from fake ones.
 To mitigate this issue I use a native lidar perspective.
 The sensor shoots out light rays at 64 fixed angles 2000 times per scan whie rotating on its axis.
 These scans can be accumulated as a dense 64 by 2000 grid.
-Figure 4 represents a 48 by 512 crop of the forward facing section of this grid in depth and intensity representation, which is recovered from raw scan data based on [^scan_seg].
+Figure 4 represents a 48 by 512 crop of the forward facing section of this grid in depth and intensity representation, which is recovered from raw scan data based on [9].
 Grey pixels in the depth image represent light rays which were not reflected back to the sensor with an intensity high enough to be detected.
 I am using this perspective because it does not suffer from occlusion and contains dense reflectance and direction information for all points.
 
@@ -319,7 +287,7 @@ Figure 6 shows results of several experiments enabled by this new pipeline:
   When projecting lidar points onto a plane it is possible to use points outside the camera field of view.
   This way any compatible model is able to use real data where it would have used padding, enabling true spatial invariance in CNNs.
   In praxis, padded regions only make up a small part of the image and rarely offer new information at the top and bottom while differences between my implementation and KITTI's introduce errors.
-  NConvs in particular already treat image edges and locations with no information the same[^nconv] and have less to gain from lidar padding. 
+  NConvs in particular already treat image edges and locations with no information the same[3] and have less to gain from lidar padding. 
   In figure 6, both NC and SNC perform slightly worse with lidar padding than without.
 3) Depth Completion in Lidar Space\
   While figure 5 is semi dense, depths of the car's windows and roof are missing.
@@ -338,8 +306,7 @@ Figure 6 shows results of several experiments enabled by this new pipeline:
   Figure 5 shows a dense intensity image of the car despite its missing lidar points.
   By estimating smoothness from reflectance, it can be fed directly into SNC.
   To keep every parameter interpretable, I use a single kernel per direction instead of a plug and play edge detector or dedicated module: \
-<img src="https://render.githubusercontent.com/render/math?math=
-s_{i,\text{dir}} = e^{-\big |\sum_{j\in U(i)} r_i  w_{ij,\text{dir}} \big | }">  \
+<img src="https://render.githubusercontent.com/render/math?math=s_{i,\text{dir}} = e^{-\big |\sum_{j\in U(i)} r_i  w_{ij,\text{dir}} \big | }">  \
   This approach is insuficcient, as the the model ultimately learns to discard the new data and rely on its previous depth based estimates instead.
   The results are the same with and without reflectance, which is why this step is not plotted above.\
   The same is true for guided depth completion where kernels with 3 input channels for each color are used to genarate initial smoothness estimates.
@@ -356,7 +323,7 @@ s_{i,\text{dir}} = e^{-\big |\sum_{j\in U(i)} r_i  w_{ij,\text{dir}} \big | }"> 
 
 
 # Usage
-- This repo is based on the kitti depth dataset.
+- This repo is based on the kitti depth dataset[6].
 Download it and modify the two paths in params.yaml to point to the correct location or modify the beginning of KittiDepthDataloader.py (you could switch to a global config file if you want).
 To use a different dataset, you would have modify or replace KittiDepthDataset.py. 
 I did this in my master thesis where I recorded a new one, but have not incuded the code here.
@@ -392,14 +359,14 @@ I did this in my master thesis where I recorded a new one, but have not incuded 
 
 
 # References
-[^nconv]: [Normalized and Diﬀerential Convolution](https://www.researchgate.net/publication/3557083_Normalized_and_differential_convolution)
-[^mobilenet_v1]: [MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications](https://arxiv.org/abs/1704.04861v1)
-[^unguided_nconv]:  [Propagating Confidences through CNNs for Sparse Data Regression](https://arxiv.org/abs/1805.11913)
-[^prob_nconv]: [Uncertainty-Aware CNNs for Depth Completion: Uncertainty from Beginning to End](https://arxiv.org/abs/2006.03349)
-[^guided_nconv]: [Confidence Propagation through CNNs for Guided Sparse Depth Regression ](https://arxiv.org/abs/1811.01791)
-[^kitti_depth]: [Sparsity Invariant CNNs](https://arxiv.org/abs/1708.06500)
-[^streaming_perception]: [Towards Streaming Perception](https://arxiv.org/abs/2005.10420)
-[^monodpth2]: [Digging Into Self-Supervised Monocular Depth Estimation](https://arxiv.org/abs/1806.01260)
-[^scan_seg]: [Scan-based Semantic Segmentation of LiDAR Point Clouds: An Experimental Study](https://arxiv.org/pdf/2004.11803.pdf)
-[^s_from_d]: [Fast robust detection of edges in noisy depth images](https://opus.lib.uts.edu.au/bitstream/10453/100244/4/Fast%20Robust%20Detection%20of%20Edges.pdf)
+[1]:  [Propagating Confidences through CNNs for Sparse Data Regression](https://arxiv.org/abs/1805.11913)\
+[2]: [Uncertainty-Aware CNNs for Depth Completion: Uncertainty from Beginning to End](https://arxiv.org/abs/2006.03349)\
+[3]: [Normalized and Diﬀerential Convolution](https://www.researchgate.net/publication/3557083_Normalized_and_differential_convolution)\
+[4]: [MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications](https://arxiv.org/abs/1704.04861v1)\
+[5]: [Confidence Propagation through CNNs for Guided Sparse Depth Regression ](https://arxiv.org/abs/1811.01791)\
+[6]: [Sparsity Invariant CNNs](https://arxiv.org/abs/1708.06500)\
+[7]: [Towards Streaming Perception](https://arxiv.org/abs/2005.10420)\
+[8]: [Digging Into Self-Supervised Monocular Depth Estimation](https://arxiv.org/abs/1806.01260)\
+[9]: [Scan-based Semantic Segmentation of LiDAR Point Clouds: An Experimental Study](https://arxiv.org/pdf/2004.11803.pdf)\
+[10]: [Fast robust detection of edges in noisy depth images](https://opus.lib.uts.edu.au/bitstream/10453/100244/4/Fast%20Robust%20Detection%20of%20Edges.pdf)
 
