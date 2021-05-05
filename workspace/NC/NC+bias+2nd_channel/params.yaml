@@ -1,0 +1,26 @@
+paths:
+  kitti_depth_dataset_dir: data/kitti_depth
+  kitti_rgb_dataset_dir: data/kitti_raw
+training:
+  num_epochs: 20
+  device: cuda
+  train_on: 10000
+  train_batch_size: 25
+  val_batch_size: 50
+  save_chkpt_each: 1
+  loss: SmoothL1Loss
+  lr: 0.01
+  lr_decay: 0.1
+  lr_decay_step: 10
+  optimizer: Adam
+model:
+  model: NC
+  rgb: False
+  reflectance: False
+  lidar_padding: False
+  n_channels: 2
+  init_method: k
+  symmetric: True
+  use_bias: True
+  pool_disp: False
+  n_stages: 4

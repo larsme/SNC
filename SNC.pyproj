@@ -1,0 +1,142 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{dd201173-3c5b-467e-99f7-35681f767435}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>main.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
+    <CommandLineArguments>  -mode results -params_dir workspace/MSNC</CommandLineArguments>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+    <Name>SNC</Name>
+    <IsWindowsApplication>False</IsWindowsApplication>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include=".gitignore" />
+    <Content Include="LICENSE" />
+    <Content Include="nconv.pyproj.user" />
+    <Content Include="README.md" />
+    <Content Include="requirements.in" />
+    <Content Include="requirements.txt" />
+    <Content Include="run_exp_script.bat" />
+    <Content Include="workspace\MSNC\SNC+inference_filter\params.yaml" />
+    <Content Include="workspace\MSNC\TSNC\params.yaml" />
+    <Content Include="workspace\MSNC\MSNC\params.yaml" />
+    <Content Include="workspace\MSNC\NC+filter\params.yaml" />
+    <Content Include="workspace\MSNC\NC+lidar_pad\params.yaml" />
+    <Content Include="workspace\MSNC\NC\params.yaml" />
+    <Content Include="workspace\MSNC\SNC+filter\params.yaml" />
+    <Content Include="workspace\MSNC\SNC+lidar_pad\params.yaml" />
+    <Content Include="workspace\MSNC\SNC\params.yaml" />
+    <Content Include="workspace\NC\NConvCNN+2nd_channel\params.yaml" />
+    <Content Include="workspace\NC\NConvCNN\params.yaml" />
+    <Content Include="workspace\NC\NC+bias+conf_loss\params.yaml" />
+    <Content Include="workspace\NC\NC+bias+pool_disp\params.yaml" />
+    <Content Include="workspace\NC\NC+bias+rmse_loss\params.yaml" />
+    <Content Include="workspace\NC\NC+bias\params.yaml" />
+    <Content Include="workspace\NC\NC\params.yaml" />
+    <Content Include="workspace\NC\small_NC\params.yaml" />
+    <Content Include="workspace\SNC\SNC2\params.yaml" />
+    <Content Include="workspace\SNC\SNC+2nd_channel\params.yaml" />
+    <Content Include="workspace\SNC\SNC+rgb\params.yaml" />
+    <Content Include="workspace\SNC\SNC-s_prop\params.yaml" />
+    <Content Include="workspace\SNC\SNC\params.yaml" />
+    <Content Include="workspace\SNC\uSNC+disp_pool_d\params.yaml" />
+    <Content Include="workspace\SNC\uSNC+focused_unpool_s\params.yaml" />
+    <Content Include="workspace\SNC\uSNC+full_unpool_s\params.yaml" />
+    <Content Include="workspace\SNC\uSNC-%28un%29pool_smooth_d\params.yaml" />
+    <Content Include="workspace\SNC\uSNC-unpool_smooth_d\params.yaml" />
+    <Content Include="workspace\SNC\uSNC\params.yaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="main.py" />
+    <Compile Include="model\MSNC.py" />
+    <Compile Include="model\NConvCNN.py" />
+    <Compile Include="model\NC_bias.py" />
+    <Compile Include="model\NC_small.py" />
+    <Compile Include="model\NC_pool.py" />
+    <Compile Include="model\SC_init.py" />
+    <Compile Include="model\SNC2.py" />
+    <Compile Include="model\uSC_init.py" />
+    <Compile Include="src\KittiDepthDataloader.py" />
+    <Compile Include="src\KittiDepthDataset.py" />
+    <Compile Include="src\losses.py" />
+    <Compile Include="model\retrieve_indices.py" />
+    <Compile Include="model\SNC.py" />
+    <Compile Include="model\uSNC.py" />
+    <Compile Include="model\NC.py" />
+    <Compile Include="model\NC_conv.py" />
+    <Compile Include="model\NC_unpool.py" />
+    <Compile Include="model\SNC_conv.py" />
+    <Compile Include="model\SNC_unpool.py" />
+    <Compile Include="model\SNC_pool.py" />
+    <Compile Include="model\uSNC_unpool.py" />
+    <Compile Include="model\uSNC_pool.py" />
+    <Compile Include="model\uSNC_conv.py" />
+    <Compile Include="src\KittiDepthTrainer.py" />
+    <Compile Include="src\error_metrics.py" />
+    <Compile Include="src\visualize_results.py">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="images\" />
+    <Folder Include="model\" />
+    <Folder Include="src\" />
+    <Folder Include="workspace\" />
+    <Folder Include="workspace\MSNC\" />
+    <Folder Include="workspace\MSNC\SNC+inference_filter\" />
+    <Folder Include="workspace\MSNC\TSNC\" />
+    <Folder Include="workspace\MSNC\MSNC\" />
+    <Folder Include="workspace\MSNC\NC+filter\" />
+    <Folder Include="workspace\MSNC\NC+lidar_pad\" />
+    <Folder Include="workspace\MSNC\NC\" />
+    <Folder Include="workspace\MSNC\SNC+filter\" />
+    <Folder Include="workspace\MSNC\SNC+lidar_pad\" />
+    <Folder Include="workspace\MSNC\SNC\" />
+    <Folder Include="workspace\NC\NConvCNN+2nd_channel\" />
+    <Folder Include="workspace\NC\NConvCNN\" />
+    <Folder Include="workspace\SNC\SNC2\" />
+    <Folder Include="workspace\SNC\SNC+2nd_channel\" />
+    <Folder Include="workspace\SNC\SNC+rgb\" />
+    <Folder Include="workspace\NC\small_NC\" />
+    <Folder Include="workspace\NC\NC+bias+pool_disp\" />
+    <Folder Include="workspace\SNC\" />
+    <Folder Include="workspace\SNC\uSNC-unpool_smooth_d\" />
+    <Folder Include="workspace\SNC\uSNC\" />
+    <Folder Include="workspace\SNC\SNC-s_prop\" />
+    <Folder Include="workspace\SNC\SNC\" />
+    <Folder Include="workspace\SNC\uSNC+disp_pool_d\" />
+    <Folder Include="workspace\SNC\uSNC+full_unpool_s\" />
+    <Folder Include="workspace\SNC\uSNC+focused_unpool_s\" />
+    <Folder Include="workspace\SNC\uSNC-%28un%29pool_smooth_d\" />
+    <Folder Include="workspace\NC\" />
+    <Folder Include="workspace\NC\NC+bias\" />
+    <Folder Include="workspace\NC\NC+bias+rmse_loss\" />
+    <Folder Include="workspace\NC\NC+bias+conf_loss\" />
+    <Folder Include="workspace\NC\NC\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include="env\">
+      <Id>env</Id>
+      <Version>3.7</Version>
+      <Description>env (Python 3.7 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>
