@@ -24,7 +24,7 @@ Color and reflectance information is seamlessly integrated into the model by app
 | NC+filter              | 0.0323 ± 0.0011 | 337 mm ± 8   | 1462 mm ± 27  | 60.67% ± 0.17  | 81.52% ± 0.22  | 90.14% ± 0.18  |           74 | 33 ms ± 1       |
 | SNC                    | 0.0252 ± 0.0004 | 284 mm ± 3   | 1332 mm ± 18  | 64.68% ± 0.48  | 85.38% ± 0.41  | 92.57% ± 0.18  |          480 | 26 ms ± 0       |
 | SNC+2nd_channel        | 0.0245 ± 0.0005 | 277 mm ± 4   | 1306 mm ± 13  | 65.87% ± 0.25  | 85.99% ± 0.10  | 92.77% ± 0.11  |          932 | 24 ms ± 0       |
-| SNC2                   | 0.0233 ± 0.0001 | 266 mm ± 2   | 1282 mm ± 6   | 66.31% ± 0.17  | 86.40% ± 0.09  | 93.18% ± 0.05  |    484 + 480 | 72 ms ± 1       |
+| SNC+2nd_module         | 0.0233 ± 0.0001 | 266 mm ± 2   | 1282 mm ± 6   | 66.31% ± 0.17  | 86.40% ± 0.09  | 93.18% ± 0.05  |    484 + 480 | 72 ms ± 1       |
 
 *Figure 0: Comparison with the baseline I modified. \
 All experiments in this readme use the same learning rate etc as the NConvCNN baseline.
@@ -170,7 +170,7 @@ The full implementation can be found [here](model/SNC_conv.py).
 
 ![Trajectories SNC](workspace/SNC/metrics_trajectories.png) \
 *Figure 3: Metric trajectories of SNC over training based on 4 runs each. 
-SNC2 incorporates a frozen and a trainable SNC model, resulting a parameter size of 964 if both were trained at the same time.
+SNC+2nd_module incorporates a frozen and a trainable SNC model, resulting a parameter size of 964 if both were trained at the same time.
 If you were wondering how P(SNC+2nd_channel) is < 2 P(SNC), it's because my spatial convolutions scale with kernel size and the number of input channels only, meaning the first layer has fewer parameters than you might expect.*
 
 Figure 3 shows SNC experiments.
@@ -219,7 +219,7 @@ where ' marks outputs of the first module.
 ![Streaming Perception](images/workspace_SNC_SNC_run0000_ep0020_streaming_perception_4149.png)\
 ![Streaming Perception](images/workspace_SNC_SNC2_run0000_ep0020_streaming_perception_4149.png)\
 *Figure 6: Streaming Perception \
-Latent space of every second layer of both SNC2 modules; the first of which is equal to SNC.
+Latent space of every second layer of SNC+2nd_module, which freezes SNC as its first module.
 The shown smoothness is the product over all edge directions while smoothness confidence is shown as a mean.*
 
 
@@ -227,7 +227,7 @@ The shown smoothness is the product over all edge directions while smoothness co
 In a similar settting SNC would perform better than its prediction speed suggests,
 because every layer of the model outputs updated predictions and confidences like in figure 6, despite only involving the depth ouput in a loss.
 SNC can be thought of as a recurrent ensemble choosing different expert over time for different resolutions.
-This is true for individual layers as well as groups of layers and the full model, which is used as a layer in SNC2.
+This is true for individual layers as well as groups of layers and the full model, which is used as a layer in SNC+2nd_module.
 In a realtime setting with task A downstream of SNC and task B dowstream of both,
 task A can rely on intermediate prediction while task B uses the final output.
 This is compounded by the fact that most vision tasks use downscaled images while SNC does not.
@@ -242,7 +242,7 @@ In a real time setting, data of the previous time step could be used as an addit
 ![Smoothness Gating](images/occlusion_SNC.jpg)
 ![Smoothness Gating](images/occlusion_SNC2.png) \
 *Figure 3: Predictions with input errors.\
-From left to right: Sparse input, NC, NC with gated pooling, SNC, SNC2. Colormaps are based on depth statistics of each whole image.*
+From left to right: Sparse input, NC, NC with gated pooling, SNC, SNC+2nd_module. Colormaps are based on depth statistics of each whole image.*
 
 ![Filtered input](images/occlusion_sparse_filtered.png)
 ![NC Filtered](images/occlusion_NC_filtered.png)
@@ -256,7 +256,7 @@ Some points are detected by the moving lidar sensor which would be occluded in t
 In the same area, the large reflective and/or transparent surface of a car on the left leads to missing non-occluded lidar points.
 Consequences of these errors are especially apparent in NC predictions.
 This is partially mitigated without additional parameters by gating the pooling operation with inverse depth to favour closer points ("NC+pool_disp" in figure 1).
-SNC and SNC2 are expressive enough to filter dense occluded points correctly despite not being designed to do so.
+SNC and SNC+2nd_module are expressive enough to filter dense occluded points correctly despite not being designed to do so.
 Neither is able to distinguish real holes in the image from fake ones.
 
 ![Lidar Grid](images/workspace_4149_lidar_grid.png)\
@@ -278,11 +278,14 @@ Figure 6 shows results of several experiments enabled by this new pipeline:
 1) Occlusion Filter\
  Because I know which points are adjacent in the dense lidar grid, I can model occlusion in camera perspective explicitly and filter occluded points.
  My implementation is based on the idea that inside the area spanned by four projected, formerly adjacend points, no depth larger than the maximum of these four points is allowed.
-  While NC improves with this filter in figure 6, SNC does not.
-  I assume this is either because on average, SNC's learned filtering is better than my own or because some occluded points are useful.
-  The first option is supported by SNC2 in figure 3, which feeds smoothness and outlier filtering of a frozen SNC into a second SNC and better matches the cyclist's outline where my own approximation misses some points in figure 4.
+  While NC improves with this filter in figure 6, SNC does not; likely because its own filtering is better than my own. 
+  This is supported by SNC+2nd_module in figure 3, which feeds smoothness and outlier filtering of a frozen SNC into a second SNC and better matches the cyclist's outline where my own approximation misses some points in figure 4.
   At the same time, it still predicts holes.
   A different filtering approach could be both faster and more accurate.
+  KITTI generates ground truth values by accumulating 20 lidar scans and comparing their results to stereo depth estimates[6], meaning non-occluded inputs should still be present.
+  For NC+gt_filter and SNC+filter, i simulate an ideal filter by removing all depth values which differ from gt depths by more than a threshold.
+  These models accomplish the best metrics in this repo, suggesting occlusion has a bigger influence than precise object borders in the KITTI depth datset.
+  One possible explenation for this is mentioned by the authors: Depth bleeding artifacts at object borders of their stereo based filter[6] result in differences to the lidar measurements, which are subsequently filtered out.
 2) Lidar Padding\
   When projecting lidar points onto a plane it is possible to use points outside the camera field of view.
   This way any compatible model is able to use real data where it would have used padding, enabling true spatial invariance in CNNs.

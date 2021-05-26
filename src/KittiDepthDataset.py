@@ -17,7 +17,7 @@ from scipy.interpolate import interp1d
 
 class KittiDepthDataset(Dataset):
 
-    def __init__(self, kitti_depth_path, setname='train', load_rgb=False, rgb_dir=None, lidar_padding=None, lidar_projection=False, device=None):
+    def __init__(self, kitti_depth_path, setname='train', load_rgb=False, rgb_dir=None, lidar_padding=None, lidar_projection=False, gt_filter=False, device=None):
 
         self.kitti_depth_path = kitti_depth_path
         self.setname = setname
@@ -25,6 +25,7 @@ class KittiDepthDataset(Dataset):
         self.rgb_dir = rgb_dir
         self.lidar_padding = lidar_padding
         self.lidar_projection = lidar_projection
+        self.gt_filter = gt_filter
         self.device = device
 
         if setname == 'train' or setname == 'val':
@@ -91,6 +92,9 @@ class KittiDepthDataset(Dataset):
         # add channel dim & convert to Pytorch Tensors
         gt_depth = torch.tensor(gt_depth[None,...], dtype=torch.float, device=self.device)
         sparse_depth = torch.tensor(sparse_depth[None,...], dtype=torch.float, device=self.device)
+        if self.gt_filter:
+            sparse_depth[(sparse_depth-gt_depth).abs() >= 0.1] = 0
+        
 
         # Read RGB images
         if self.load_rgb:
