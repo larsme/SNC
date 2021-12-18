@@ -2,11 +2,11 @@ paths:
   kitti_depth_dataset_dir: data/kitti_depth
   kitti_rgb_dataset_dir: data/kitti_raw
 training:
-  num_epochs: 2
+  num_epochs: 20
   device: cuda
   train_on: 10000
   train_batch_size: 50
-  val_batch_size: 100
+  val_batch_size: 60
   save_chkpt_each: 1
   loss: SmoothL1Loss
   lr: 0.01
@@ -21,13 +21,17 @@ model:
   filter_occlusion: True
   lidar_model: None
   image_model:
-    model: NC
+    model: NCrec
     rgb: False
     reflectance: False
-    lidar_padding: False
-    n_channels: 1
-    init_method: k
-    symmetric: True
-    use_bias: False
-    pool_disp: False
-    n_stages: 4
+    inner_model:
+      model: NC
+      rgb: False
+      reflectance: False
+      lidar_padding: False
+      n_channels: 1
+      init_method: k
+      symmetric: True
+      use_bias: False
+      pool_disp: False
+      n_stages: 4

@@ -14,7 +14,7 @@ training:
   lr_decay_step: 10
   optimizer: Adam
 model:
-  model: SNC_sd
+  model: uSNC
   rgb: False
   reflectance: False
   lidar_padding: False

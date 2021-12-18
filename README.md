@@ -1,8 +1,7 @@
 ﻿# SNC - Smoothness gated, normalized convolutions for efficient Depth Completion
 
-*Disclamer: These are just some results of research in my free time. 
-Inference durations may be affected by me doing other stuff on my computer.
-All expermients should be replicable with this repo, though there may have beeen minor changes to their implementation.
+*Disclamer: These are just some results of research in my free time, implemented like I would have back during my master thesis if I had the time. 
+While inference durations may be affected by me doing other stuff on my computer and results by shutting it down and restarting from a checkpoint, all expermients should be reproducible with this repo.
 See the usage section at the bottom if you want to try.*
 
 
@@ -12,25 +11,26 @@ This fork improves NConvs to be smaller, faster and involve stronger inductive b
 NConvs have a tendency to propagate information across depth discontinuities, which is prevented by smoothness gating in SNC.
 Finally, the following steps are attempted with mixed results:
 Reflective surfaces with missing lidar points are adressed by initially applying depth completion in an occlusion-free native lidar perspective.
-Occluded points are filtered out during the projection to camera perspective.
+Occluded points are filtered out by reccurrent versions of the model or during the projection to camera perspective.
 Color and reflectance information is seamlessly integrated into the model by approximating an initial smoothness estimate for each perspective.
 
 
-| Model                  | Validation Loss | MAE          | RMSE          | Delta1         | Delta2         | Delta3         |   Parameters | BatchDuration   |
-|:-----------------------|:----------------|:-------------|:--------------|:---------------|:---------------|:---------------|-------------:|:----------------|
-| NConvCNN [2] | 0.0404 ± 0.0009 | 406 mm ± 11  | 1582 mm ± 21  | 58.18% ± 0.92  | 79.72% ± 0.31  | 88.61% ± 0.26  |          137 | 571 ms ± 66     |
-| NConvCNN+2nd_channel [2]   | 0.0394 ± 0.0005 | 398 mm ± 5   | 1580 mm ± 10  | 57.45% ± 1.15  | 81.78% ± 0.24  | 89.60% ± 0.14  |          481 | 459 ms ± 1      |
-| NC                     | 0.0383 ± 0.0000 | 379 mm ± 1   | 1655 mm ± 3   | 60.40% ± 0.04  | 80.97% ± 0.02  | 89.58% ± 0.02  |           74 | 1 ms ± 0        |
-| NC+filter              | 0.0323 ± 0.0011 | 337 mm ± 8   | 1462 mm ± 27  | 60.67% ± 0.17  | 81.52% ± 0.22  | 90.14% ± 0.18  |           74 | 33 ms ± 1       |
-| SNC                    | 0.0252 ± 0.0004 | 284 mm ± 3   | 1332 mm ± 18  | 64.68% ± 0.48  | 85.38% ± 0.41  | 92.57% ± 0.18  |          480 | 26 ms ± 0       |
-| SNC+2nd_channel        | 0.0245 ± 0.0005 | 277 mm ± 4   | 1306 mm ± 13  | 65.87% ± 0.25  | 85.99% ± 0.10  | 92.77% ± 0.11  |          932 | 24 ms ± 0       |
-| SNC+2nd_module         | 0.0233 ± 0.0001 | 266 mm ± 2   | 1282 mm ± 6   | 66.31% ± 0.17  | 86.40% ± 0.09  | 93.18% ± 0.05  |    484 + 480 | 72 ms ± 1       |
+| Model                    | Validation Loss | MAE          | RMSE          | Delta1         | Delta2         | Delta3         |   Parameters | BatchDuration   |
+|:-------------------------|:----------------|:-------------|:--------------|:---------------|:---------------|:---------------|-------------:|:----------------|
+| NConvCNN [2]             | 0.0404 ± 0.0009 | 406 mm ± 11  | 1582 mm ± 21  | 58.18% ± 0.92  | 79.72% ± 0.31  | 88.61% ± 0.26  |          137 | 7 ms ± 0        |
+| NConvCNN+2nd_channel [2] | 0.0394 ± 0.0005 | 398 mm ± 5   | 1580 mm ± 10  | 57.45% ± 1.15  | 81.78% ± 0.24  | 89.60% ± 0.14  |          481 | 11 ms ± 0       |
+| NC                       | 0.0383 ± 0.0000 | 379 mm ± 1   | 1655 mm ± 3   | 60.40% ± 0.04  | 80.97% ± 0.02  | 89.58% ± 0.02  |           74 | 1 ms ± 0        |
+| NCrec                    | 0.0301 ± 0.0022 | 324 mm ± 16  | 1322 mm ± 46  | 60.94% ± 0.21  | 81.54% ± 0.30  | 89.89% ± 0.34  |           75 | 2 ms ± 0        |
+| SNC                      | 0.0252 ± 0.0004 | 284 mm ± 3   | 1332 mm ± 18  | 64.68% ± 0.48  | 85.38% ± 0.41  | 92.57% ± 0.18  |          480 | 17 ms ± 0       |
+| SNC+2nd_channel          | 0.0245 ± 0.0005 | 277 mm ± 4   | 1306 mm ± 13  | 65.87% ± 0.25  | 85.99% ± 0.10  | 92.77% ± 0.11  |          932 | 17 ms ± 0       |
+| SNC+2nd_module           | 0.0233 ± 0.0001 | 266 mm ± 2   | 1282 mm ± 6   | 66.31% ± 0.17  | 86.40% ± 0.09  | 93.18% ± 0.05  |      2*480+4 | 33 ms ± 0       |
 
 *Figure 0: Comparison with the baseline I modified. \
 All experiments in this readme use the same learning rate etc as the NConvCNN baseline.
 The largest possible bachsize is used each time for faster training; I use a NVIDEA GeForce GTX 1660.
-The full parameter settings and experiment metrics can be found in the experiment folder.
-In this table, all models were trained for 20 epochs with 10k examples per batch.*\
+The full parameter settings and experiment metrics can be found in the worspace folders.
+In this table, all models were trained for 20 epochs with 10k examples per batch.
+The "BatchDuration" column it based on one initial epoch with batch size 1.*\
 <img src="https://render.githubusercontent.com/render/math?math=\text{Delta}_i \coloneqq \mean_{d{j,\text{gt}}>0} \big( \max ( \frac{d_j}{d_{j,\text{gt}}},\frac{d_{j,\text{gt}}}{d_j} ) < 1.01^i \big)">
 
 
@@ -57,17 +57,17 @@ I refer to the resulting CNN as NC.
 *Figure 1: Metric trajectories of NC over training based on 4 runs each.*
 
   1. (Re)moving bias parameters \
-     It is mathematically equivalent to move the biases out of the convolutions and towards the end of the network, where they can be combined into a single parameter.\
+     It is mathematically equivalent to move the bias parameters out of the convolutions and towards the end of the network, where they can be combined into a single parameter.\
   <img src="https://render.githubusercontent.com/render/math?math=d_{i,b}'' = \frac{\sum_j w_{ij}' d_{i,b}' \text{cd}_j'}{\sum_j \text{cd}_j' w_{ij}'} %2B b' = \frac{\sum_j w_{ij}' (\frac{\sum_j w_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j w_{ij}} %2B b) \text{cd}_j'}{\sum_j \text{cd}_j' w_{ij}'} %2B b' = \frac{\sum_j w_{ij}' \frac{\sum_j w_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j w_{ij}} \text{cd}_j'}{\sum_j \text{cd}_j' w_{ij}'} %2B b %2B b' \coloneqq \frac{\sum_j w_{ij}' d_j' \text{cd}_j'}{\sum_j \text{cd}_j' w_{ij}'} %2B b %2B b'  =  d_i'' %2B b %2B b'"> \
-     Besides this one remaining offset, SNC has the option to specialize biases towards different confidences or locations.
-    These can be either inluded as offsets or integrated via 1x1 NConvs as independend estimates and confidences.
+     Instead of this one scalar offset, SNC could also include a location dependend and/or confidence based one. 
+     The latter would be combined via 1x1 NConv instead of addition.
     Based on the rationale that most input data is accurate, NC does not use any bias parameters in the name of interpretability.
     When an error is observed, I will attempt to adress it at the source.
   2. Speedup\
      Precomputing the confidence denominator \
      <img src="https://render.githubusercontent.com/render/math?math=\hat{w}_j \coloneqq \frac{w_{ij}}{\sum_k w_{ij}}"> \
      <img src="https://render.githubusercontent.com/render/math?math=\text{cd}_i' = \frac{\sum_j w_{ij} \text{cd}_j}{\sum_j w_{ij}} = {\sum_j \hat{w}_{ij} \text{cd}_j}"> \
-     <img src="https://render.githubusercontent.com/render/math?math=d_i' = \frac{\sum_j w_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j w_{ij}} = \frac{\sum_j \hat{w}_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j \hat{w}_{ij}} = \frac{\sum_j \hat{w}_{ij} d_j \text{cd}_j}{c'}"> \
+     <img src="https://render.githubusercontent.com/render/math?math=d_i' = \frac{\sum_j w_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j w_{ij}} = \frac{\sum_j \hat{w}_{ij} d_j \text{cd}_j}{\sum_j \text{cd}_j \hat{w}_{ij}} = \frac{\sum_j \hat{w}_{ij} d_j \text{cd}_j}{\text{cd}'}"> \
      and skipping the denominators until the last layer \
      <img src="https://render.githubusercontent.com/render/math?math=\text{dcd}_i' \coloneqq  d_i' \text{cd}_i'  =  \frac{\sum_j \hat{w}_{ij} d_j \text{cd}_j}{\text{cd}_i'} \text{cd}_i' = \sum_j \hat{w}_{ij} d_j \text{cd}_j =  \sum_j \hat{w}_{ij} \text{dcd}_j"> \
      removes unnecessary divisions.
@@ -87,7 +87,7 @@ I refer to the resulting CNN as NC.
      While these reduce the number of flops on paper, they also slow prediction speed on GPU, which is rectified by recombining their weights beforehand.
   5. Symmetric weight sharing \
      One of the most prominent dataset augmentation techniques in vision is horizontal flipping, which models like [8] also employ during inference to average with the mirrored prediction.
-     NC instead enforces symmetry explicitly through weigh sharing in each layer, almost halfing the spatial parameter count instead of doubling computation cost.
+     NC instead enforces symmetry explicitly through weight sharing in each layer, almost halfing the spatial parameter count instead of doubling computation cost.
      In models with multiple channels this also removes the possibility of multiple asymmetric but mirrored channels, which is not a problem here.
 Figure 1 shows a more effective training with weight sharing.
   6. Using online limits\
@@ -115,24 +115,46 @@ Figure 1 shows a more effective training with weight sharing.
       Since the weights are fixed during inference, the result can be stored and reused instead.
       A new model could also be initialized with the learned weights and finetuned without my parameter reducing assumptions.
    9. Loss function\
-       NC adopts the smooth L1 loss from [1] but discards their confidence term.
-       While this term decays over time, non-gated NC performs better without it in figure 1, even when confidence weightied metrics are considered, suggesting its regularizing influence is not needed for smaller models.
-       On full NC it does improve confidence based metrics, but also slows down training.
-       Similarly, the MSE loss improved the RMSE metric at the cost of the rest.
+      NC adopts the smooth L1 loss from [1] but discards their confidence term.
+      While this term decays over time, non-gated NC performs better without it in figure 1, even when confidence weightied metrics are considered, suggesting its regularizing influence is not needed for smaller models.
+      On full NC it does improve confidence based metrics, but also slows down training.
+      Similarly, the MSE loss improved the RMSE metric at the cost of the rest.
+   10. Recurrence\
+      Inputs and outputs of NConvs both estimate the same thing using matrices of the same shape. 
+      As such multiple sequential NConvs, including the entire NC model, essentially simulate a single NConv with a bigger kernel size and weight constraints.
+      Multiple NC modules could be used as layers within a bigger model without any modifications.
+      NCrec and NC+second_module are such models, except only the confidence inputs of the second module are affected by the first one while both use the same depth estimates.
+      These confidences are supposed to downweight occluded inputs if the initial depth is much larger than the estimarted one.\
+      <img src="https://render.githubusercontent.com/render/math?math=d'' = d"> \
+      <img src="https://render.githubusercontent.com/render/math?math=c'' = \min \big(1, \frac{d'}{d} \big)^w  c"> \
+      <img src="https://render.githubusercontent.com/render/math?math=w > 0"> \
+      To verify this is what happens the first module is frozen in both cases. 
+      For NC+second_module it is set to a fully trained NC.
+      In NCrec the second module is used twice, the first time without gradients.
+      NCrec performs better, suggesting both modules do the same thing and learn it easier with cleaner inputs.
 
-![Weights NC](images/workspace_NC_NC_run0000_ep0020_weights.png)\
-*Figure 2: All preprocessed weights of NC. Spatial kernels are mirrored for convenience.*
+| Model                    | Validation Loss | MAE          | RMSE          | Delta1         | Delta2         | Delta3         |   Parameters | BatchDuration   |
+|:-------------------------|:----------------|:-------------|:--------------|:---------------|:---------------|:---------------|-------------:|:----------------|
+| NC                       | 0.0383 ± 0.0000 | 379 mm ± 1   | 1655 mm ± 3   | 60.40% ± 0.04  | 80.97% ± 0.02  | 89.58% ± 0.02  |           74 | 1 ms ± 0        |
+| NC+2nd_module            | 0.0343 ± 0.0004 | 353 mm ± 3   | 1463 mm ± 14  | 60.72% ± 0.06  | 81.24% ± 0.06  | 89.62% ± 0.02  |       2*74+1 | 2 ms ± 0        |
+| NCrec                    | 0.0301 ± 0.0022 | 324 mm ± 16  | 1322 mm ± 46  | 60.94% ± 0.21  | 81.54% ± 0.30  | 89.89% ± 0.34  |           75 | 2 ms ± 0        |
+
+      
+
+![Weights NC](images/workspace_NC_NCrec_run0000_ep0020_weights.png)\
+*Figure 2: All preprocessed weights of the NC module in NCrec. Spatial kernels are mirrored for convenience, the weight from the equation above is 14.02.*
 
 Figure 2 shows the resulting weights.
-NC learns to keep most of its confidence in the origin pixel, shifting everything down in the initial layer and back up in the final one.
+NCrec learns to keep most of its confidence in the origin pixel, shifting everything down in the initial layer and back up in the final one.
 One stage deeper distributes it roughly unifomly to sorrounding pixels.
 The deepest two layers are specialized into propagating data across large distances in horizontal direction to fill remaining gaps.
 The weights for the skip connections are almost one, masking the lower resolution where no gaps exist.
 Overall there is a slight trend to propagate depths upwards rather than downwards, possibly because those regions are more sparse and conflicting measurements above an object less likely.
+This decription also fits a trained NC, which is similar to figure 2.
 
 Based on the observation that the first and last layer mostly focus on one pixel, I test a 53 parameter model with no bias and no full resolution NConvs ("small" in figure 1).
 It has a worse MAE and Delta3 metric but matches or exceeds NC everywhere else.
-Based on w_prop_d, a shallower version of NC might work as well, but only by overfitting to the dataset and leaving large gaps without any predictions. 
+Based on the strong skip connections in figure 2, a shallower version of NC might work as well, but possibly only in this dataset where both input and groundtruth are based on the same sensor and large gaps in the output might not result in big errors. 
 Filling these gaps with fixed or shared weights on lower layers would half the learnable parameter count of NC with similar metrics, but ultimately be a deception.
 
 ## Smoothness Gating
@@ -158,7 +180,7 @@ It is adapted to NConvs by searching for weighted extrema and outputting a dedic
 <img src="https://render.githubusercontent.com/render/math?math=\text{cs}_k = \text{cd}_{j_{\text{min},k}} \text{cd}_{j_{\text{max},k}}"> \
 where  <img src="https://render.githubusercontent.com/render/math?math=w_\text{pow}"> represents a trainable sensitivity to depth deviations in each layer.
 
-Like depth in NC, this version of smoothness is further interpolated with NConvs and thus remains one step ahead of the depth propagation.
+Smoothness is further interpolated with NConvs, remaining one step ahead of the depth propagation.
 However unlike depth its purpose is to represent edges, which are typically lines, not areas.
 u(ndirected)SNC, the model described so far, is turned into full SNC by using 4 different smoothness channels to represent 4 possible edge directions.
 For each intermediate pixel, <img src="https://render.githubusercontent.com/render/math?math=s_{ij}"> now multiplies the edge direction it has to cross to connect i and j.
@@ -177,9 +199,15 @@ Figure 3 shows SNC experiments.
 All versions of SNC outperform uSNC, underlining the need for directed smoothness.
 Among uSNC variants the best results are gained when smoothness gating is implemented during up- and downsampling at the cost of slightly slower inference.
 This is inherited by SNC.
-During focused_unpool_s, 1-s_skip is used to focus pooled smoothness on known edges via gated unpooling.
-During full_unpool_s, this mechanism itself is gated by 1-s_pool to only use it near edges. 
-Neither version is successfull. 
+Two more complicated versions prove unsuccessfull: 
+focused_unpool_s focuses pooled smoothness on known edges during the unpooling operation by multiplying with 1-s_skip.
+full_unpool_s attempt to limit this behavour when not near edges using 1-s_pool. 
+
+Similar to NC I generate recurrent versions of SNC. Smoothness estimates and their confidences are propagated between modules. 
+SNCrec performs worse than SNC+2nd_module, but still better than normal SNC.
+The two modules have similar enough functionality to benefit from using the same module twice to filter occluded inputs but also natively deal with different levels of input errors, supporting my hypothesis of a learned occlusion filter.
+In a real time setting, data of the previous time step might be used instead of the first module, mitigating the lower prediction speed.
+Unlike NC, using more than one channel is beneficial to SNC.
 
 
 ![Weights SNC](images/workspace_SNC_SNC_run0000_ep0020_weights.png)\
@@ -193,7 +221,7 @@ Similarly, I would have expected w_spatial_e to propagate smoothness information
 A look at w_prop_e and w_skip_e offers one possible explanation for this potential randomness:
 The model prefers skip connections over downsampled data and values newly calculated smoothness over previous estimates in most cases, resulting in much weaker, possibly vanishing gradients for the dicarded option.
 When skipping smoothness propagation entirely in figure 3, the resulting model is weaker, but still outperforms uSNC and remains competitive. 
-Another possible explenation is a learned occlusion filter (see the MSNC section).
+Another possible explanation is a 'misappropriation' of this mechanism to learn an occlusion filter which has proved its effectiveness in NCrec.
 
 Newly calculated smoothness requires w_pow_e.
 This variable is particularly high in lower resolutions, possibly because estimates are less noisy and more indicative of actual object borders.
@@ -224,14 +252,8 @@ The shown smoothness is the product over all edge directions while smoothness co
 
 
 [7] evaluate model outputs on both accuracy and latency by integrating updated prediction errors over time.
-In a similar settting SNC would perform better than its prediction speed suggests,
-because every layer of the model outputs updated predictions and confidences like in figure 6, despite only involving the depth ouput in a loss.
-SNC can be thought of as a recurrent ensemble choosing different expert over time for different resolutions.
-This is true for individual layers as well as groups of layers and the full model, which is used as a layer in SNC+2nd_module.
-In a realtime setting with task A downstream of SNC and task B dowstream of both,
-task A can rely on intermediate prediction while task B uses the final output.
-This is compounded by the fact that most vision tasks use downscaled images while SNC does not.
-In a real time setting, data of the previous time step could be used as an additional channel.
+In a similar settting SNC would perform better than its prediction speed suggests, because all intermediate results are valid outputs as shown in Figure 6, 
+particularly if their resolution matches the downsampled inputs of most vision tasks.
 
 
 ## Multi-Projection
@@ -283,9 +305,10 @@ Figure 6 shows results of several experiments enabled by this new pipeline:
   At the same time, it still predicts holes.
   A different filtering approach could be both faster and more accurate.
   KITTI generates ground truth values by accumulating 20 lidar scans and comparing their results to stereo depth estimates[6], meaning non-occluded inputs should still be present.
-  For NC+gt_filter and SNC+filter, i simulate an ideal filter by removing all depth values which differ from gt depths by more than a threshold.
-  These models accomplish the best metrics in this repo, suggesting occlusion has a bigger influence than precise object borders in the KITTI depth datset.
-  One possible explenation for this is mentioned by the authors: Depth bleeding artifacts at object borders of their stereo based filter[6] result in differences to the lidar measurements, which are subsequently filtered out.
+  For NC+gt_filter and SNC+gt_filter, I simulate KITTI's stereo comarison as an ideal filter in their dataset by removing all depth values which differ from gt depths by more than a threshold.
+  These models accomplish the best metrics in this repo, suggesting occlusion has a bigger influence than precise object borders. 
+  It should be noted that this filter also corrects for errors caused by object movement during the lidar's rotation, which is unlikely to be matched by an unguided, single frame model.
+  One possible explanation for this is mentioned by the authors: Depth bleeding artifacts at object borders of their stereo based filter[6] result in differences to the lidar measurements, which are subsequently filtered out.
 2) Lidar Padding\
   When projecting lidar points onto a plane it is possible to use points outside the camera field of view.
   This way any compatible model is able to use real data where it would have used padding, enabling true spatial invariance in CNNs.
@@ -317,9 +340,9 @@ Figure 6 shows results of several experiments enabled by this new pipeline:
 
 6) Sparse Intensity\
   By mapping reflectance to the same coordinates as the respective lidar points, a sparse intensity map can be geneated in camera space.
-  By concatenating it with depth and confidence, it  can be completed by NC without any additional operations or weights.
-  In SNC intensity differences could be used as another source of smoothness to be multiplied with the original depth based estimates.
-  Because of the additionnal memory requirements and the results above, i have not tried this.\
+  By concatenating it with depth and confidence, it can be completed by NC without any additional operations or weights.
+  In SNC intensity differences could be used as another source of smoothness.
+  Because of the additional memory requirements and previous results, I have not tried this.\
   Besides 3D points and reflectance, Lidar sensors are able to return information not found in the raw data from KITTI.
   Most useful to MSNC might be the ambient brightness measured by the sensor when it is not detecting is own light rays, a second dense color channel in lidar space.
 

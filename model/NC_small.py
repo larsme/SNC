@@ -8,6 +8,7 @@ import PIL.Image as Image
 from model.NC_conv import NC_conv as Conv
 from model.NC_pool import NC_pool as Pool
 from model.NC_unpool import NC_unpool as Unpool
+from model.NC_bias import NC_bias as Bias
 
 class NC_small(torch.nn.Module):
 
@@ -23,7 +24,7 @@ class NC_small(torch.nn.Module):
             self.sum_pad_d = 1 + 1 + 2 * self.sum_pad_d + 1 + 1
         self.sum_pad_d = 2 ** (self.n_stages - 2) * int(np.ceil((self.sum_pad_d - 2) / 2 ** (self.n_stages - 2)))
         
-        unpools = []
+        unpools, convs = [], []
         for l in range(self.n_stages - 1):
             convs.append(Conv(n_in=n_c, n_out=n_c, kernel_size=3, max_pool_size=3, **params))
             unpools.append(Unpool(n_c=n_c, kernel_size=4, stride=2, **params))
@@ -61,7 +62,7 @@ class NC_small(torch.nn.Module):
             x_skip = skip[-1]
             del skip[-1]
             x = self.unpools[stage](x_skip=x_skip, x_pool=x)
-            if stage < self.n_stages - 1:
+            if stage < self.n_stages - 2:
                 x = self.convs[1 + stage](x)
                 
         if self.lidar_padding:

@@ -82,14 +82,14 @@ class uSNC_pool(torch.nn.Module):
         # in contrast to uSNC_conv the same scs is used for the entire kernel, meaning neighbouring values can dominate an edge location
         if self.scs_pool_d:
             if self.occl_pool_d:
-                dcd, cd = x.detach().split(ce.shape[0], 0)
+                dcd, cd = x.detach().split(cs.shape[0], 0)
                 d_pooling = scs.detach() * cd / (dcd + self.eps)
             else:
                 d_pooling = scs.detach()
             x = F.conv2d(x * d_pooling.repeat(2,1,1,1), w_conv_d, padding=self.padding, stride=2) \
                 / (F.conv2d(d_pooling, w_conv_d, padding=self.padding, stride=2)+self.eps).repeat(2,1,1,1)
         elif self.occl_pool_d:
-            dcd, cd = x.split(ce.shape[0], 0)
+            dcd, cd = x.split(cs.shape[0], 0)
             disp = cd / (dcd + self.eps)
             x = F.conv2d(torch.cat((cd, cd*disp), 0), w_conv_d, padding=self.padding, stride=2) \
                 / (F.conv2d(disp, w_conv_d, padding=self.padding, stride=2)+self.eps).repeat(2,1,1,1)

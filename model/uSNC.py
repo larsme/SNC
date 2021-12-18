@@ -77,7 +77,7 @@ class uSNC(torch.nn.Module):
 
         # Decoder
         for stage in range(self.n_stages-1):
-            (d_skip, cd_skip, scs_skip, cs_skip) = skip[-1]
+            x_skip, scs_skip, cs_skip = skip[-1]
             del skip[-1]
             x, scs, cs = self.unpools[stage](x_skip=x_skip, scs_skip=scs_skip, cs_skip=cs_skip, x_pool=x, scs_pool=scs, cs_pool=cs)
             x, scs, cs = self.convs[2+stage](x, scs, cs)

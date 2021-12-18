@@ -12,7 +12,7 @@
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
-    <CommandLineArguments>  -mode results -params_dir workspace/SNC</CommandLineArguments>
+    <CommandLineArguments>-mode train -params_dir workspace/MSNC/NC2+filter -runs 4 -evaluate_all_epochs true</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <Name>SNC</Name>
     <IsWindowsApplication>False</IsWindowsApplication>
@@ -31,9 +31,9 @@
     <Content Include="requirements.txt" />
     <Content Include="run_exp_script.bat" />
     <Content Include="workspace\MSNC\NC+gt_filter\params.yaml" />
+    <Content Include="workspace\MSNC\NCrec+filter\params.yaml" />
     <Content Include="workspace\MSNC\SNC+gt_filter\params.yaml" />
     <Content Include="workspace\MSNC\SNC+inference_filter\params.yaml" />
-    <Content Include="workspace\MSNC\TSNC\params.yaml" />
     <Content Include="workspace\MSNC\MSNC\params.yaml" />
     <Content Include="workspace\MSNC\NC+filter\params.yaml" />
     <Content Include="workspace\MSNC\NC+lidar_pad\params.yaml" />
@@ -41,14 +41,19 @@
     <Content Include="workspace\MSNC\SNC+filter\params.yaml" />
     <Content Include="workspace\MSNC\SNC+lidar_pad\params.yaml" />
     <Content Include="workspace\MSNC\SNC\params.yaml" />
+    <Content Include="workspace\NC\NC+bias+2nd_channel\params.yaml" />
+    <Content Include="workspace\NC\NC+bias+asymmetry\params.yaml" />
     <Content Include="workspace\NC\NConvCNN+2nd_channel\params.yaml" />
     <Content Include="workspace\NC\NConvCNN\params.yaml" />
     <Content Include="workspace\NC\NC+bias+conf_loss\params.yaml" />
     <Content Include="workspace\NC\NC+bias+pool_disp\params.yaml" />
     <Content Include="workspace\NC\NC+bias+rmse_loss\params.yaml" />
     <Content Include="workspace\NC\NC+bias\params.yaml" />
+    <Content Include="workspace\NC\NCrec\params.yaml" />
     <Content Include="workspace\NC\NC\params.yaml" />
     <Content Include="workspace\NC\small_NC\params.yaml" />
+    <Content Include="workspace\NC\NC+2nd_module\params.yaml" />
+    <Content Include="workspace\SNC\SNCrec\params.yaml" />
     <Content Include="workspace\SNC\SNC+2nd_module\params.yaml" />
     <Content Include="workspace\SNC\SNC+2nd_channel\params.yaml" />
     <Content Include="workspace\SNC\SNC+rgb\params.yaml" />
@@ -64,11 +69,14 @@
   <ItemGroup>
     <Compile Include="main.py" />
     <Compile Include="model\MSNC.py" />
+    <Compile Include="model\NCrec.py" />
+    <Compile Include="model\NC2.py" />
     <Compile Include="model\NConvCNN.py" />
     <Compile Include="model\NC_bias.py" />
     <Compile Include="model\NC_small.py" />
     <Compile Include="model\NC_pool.py" />
     <Compile Include="model\SC_init.py" />
+    <Compile Include="model\SNCrec.py" />
     <Compile Include="model\SNC2.py" />
     <Compile Include="model\uSC_init.py" />
     <Compile Include="src\KittiDepthDataloader.py" />
@@ -99,9 +107,9 @@
     <Folder Include="workspace\" />
     <Folder Include="workspace\MSNC\" />
     <Folder Include="workspace\MSNC\NC+gt_filter\" />
+    <Folder Include="workspace\MSNC\NCrec+filter\" />
     <Folder Include="workspace\MSNC\SNC+gt_filter\" />
     <Folder Include="workspace\MSNC\SNC+inference_filter\" />
-    <Folder Include="workspace\MSNC\TSNC\" />
     <Folder Include="workspace\MSNC\MSNC\" />
     <Folder Include="workspace\MSNC\NC+filter\" />
     <Folder Include="workspace\MSNC\NC+lidar_pad\" />
@@ -109,8 +117,13 @@
     <Folder Include="workspace\MSNC\SNC+filter\" />
     <Folder Include="workspace\MSNC\SNC+lidar_pad\" />
     <Folder Include="workspace\MSNC\SNC\" />
+    <Folder Include="workspace\NC\NC+bias+2nd_channel\" />
+    <Folder Include="workspace\NC\NC+bias+asymmetry\" />
     <Folder Include="workspace\NC\NConvCNN+2nd_channel\" />
     <Folder Include="workspace\NC\NConvCNN\" />
+    <Folder Include="workspace\NC\NC+2nd_module\" />
+    <Folder Include="workspace\NC\NCrec\" />
+    <Folder Include="workspace\SNC\SNCrec\" />
     <Folder Include="workspace\SNC\SNC+2nd_module\" />
     <Folder Include="workspace\SNC\SNC+2nd_channel\" />
     <Folder Include="workspace\SNC\SNC+rgb\" />

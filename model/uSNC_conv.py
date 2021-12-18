@@ -94,14 +94,14 @@ class uSNC_conv(torch.nn.Module):
         else:
             w_conv_d, w_prop_s, w_pow_s, w_conv_s, w_channel_s = self.weights
             
-        dcd, cd = x.split(ce.shape[0], 0)
-        d_pad, cd_pad = F.pad(dcd.detach() / (cd.detach() + self.eps), (1,1,1,1)), F.pad(cd.detach(), (1,1,1,1))
+        dcd, cd = x.split(cs.shape[0], 0)
+        d_pad, cd_pad = F.pad(dcd.detach() / (cd.detach() + self.eps), (self.max_pool_padding,) * 4), F.pad(cd.detach(), (self.max_pool_padding,) * 4)
         # pick the confidence weighted min and max depths
         # divide min and max to the power of w_pow_s to calculate a new smoothness estimate
-        _, j_max = F.max_pool2d(d * cd, kernel_size=self.max_pool_size, return_indices=True, padding=self.max_pool_padding, stride=1)
-        _, j_min = F.max_pool2d(cd / (d + self.eps), kernel_size=self.max_pool_size, return_indices=True, padding=self.max_pool_padding, stride=1)
-        s_new = ((retrieve_indices(d, j_min) + self.eps) / (retrieve_indices(d, j_max) + self.eps)).pow(w_pow_s)
-        cs_new = retrieve_indices(cd, j_max) * retrieve_indices(cd, j_min)
+        _, j_max = F.max_pool2d(d_pad * cd_pad, kernel_size=self.max_pool_size, return_indices=True, padding=0, stride=1)
+        _, j_min = F.max_pool2d(cd_pad / (d_pad + self.eps), kernel_size=self.max_pool_size, return_indices=True, padding=0, stride=1)
+        s_new = ((retrieve_indices(d_pad, j_min) + self.eps) / (retrieve_indices(d_pad, j_max) + self.eps)).pow(w_pow_s)
+        cs_new = retrieve_indices(cd_pad, j_max) * retrieve_indices(cd_pad, j_min)
 
         # propagate smoothness
         if self.n_in >= self.n_out:
@@ -126,9 +126,9 @@ class uSNC_conv(torch.nn.Module):
         if self.n_out < self.n_in:
             w_s = w_s.expand(-1,d.shape[1],-1,-1,-1)
             
-        x = torch.cat((torch.einsum('b i k h w, o i k-> b o h w', self.unfold(dcd).view(w_s.shape) * w_s, w_conv_d),
-                       torch.einsum('b i k h w, o i k-> b o h w', self.unfold(cd).view(w_s.shape) * w_s, w_conv_d)), 0) \
-                          / (torch.einsum('b i k h w, o i k -> b o h w', w_s, w_conv_d) + self.eps).repeat(2,1,1,1)
+        x = (torch.stack((torch.einsum('b i k h w, o i k-> b o h w', self.unfold(dcd).view(w_s.shape) * w_s, w_conv_d),
+                          torch.einsum('b i k h w, o i k-> b o h w', self.unfold(cd).view(w_s.shape) * w_s, w_conv_d)), 
+                         1) / (torch.einsum('b i k h w, o i k -> b o h w', w_s, w_conv_d)[:,None,:,:,:] + self.eps)).view(2 * s.shape[0], *s.shape[1:])
 
         if self.training:
             scs.register_hook(lambda grad: torch.clamp(grad, -1000, 1000))
