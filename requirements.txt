@@ -62,8 +62,9 @@ tabulate==0.8.9
     # via -r requirements.in
 tikzplotlib==0.9.4
     # via -r requirements.in
-torch==1.8.1+cu111
-    # via -r requirements.in
+torch==1.10.1+cu113
+    # via
+    #   -r requirements.in
 typing-extensions==3.7.4.3
     # via torch
 zipp==3.4.0

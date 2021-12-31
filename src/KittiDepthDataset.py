@@ -137,8 +137,8 @@ class KittiDepthDataset(Dataset):
         velo_to_grid_to_image, intensity_to_grid_to_image = torch.tensor(velo_grid, device=self.device)[None,None,...], torch.tensor(intensity_grid, device=self.device)[None,None,...]
         dirs, offsets, im_shape = torch.tensor(dirs, device=self.device)[None,...], torch.tensor(offsets, device=self.device)[None,...], torch.tensor(im_shape, device=self.device)[None,...]
         d, cd, x = project_velo_grid_to_image(self.lidar_padding, velo_to_grid_to_image, torch.ones_like(velo_to_grid_to_image),intensity_to_grid_to_image, dirs, offsets, im_shape)
-        velo_to_grid_to_image = d.cpu().numpy().squeeze()
-        intensity_to_grid_to_image = x.cpu().numpy().squeeze()
+        velo_to_grid_to_image = d.numpy().squeeze()
+        intensity_to_grid_to_image = x.numpy().squeeze()
 
         import matplotlib.pyplot as plt
         lower_quantile = np.quantile(velo_to_grid_to_image[velo_to_grid_to_image != 0], 0.05)

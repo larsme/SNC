@@ -5,11 +5,12 @@ import matplotlib.pyplot as plt
 
 class NC_bias(torch.nn.Module):
     def __init__(self, use_bias):
-        super(NC_bias, self).__init__()
+        super().__init__()
 
         self.eps = 1e-20
         self.use_bias = use_bias
-        self.offset = torch.nn.Parameter(data=torch.zeros(1), requires_grad=use_bias)
+        if use_bias:
+            self.offset = torch.nn.Parameter(data=torch.zeros(1))
 
         # example alternate bias implementation in case someone wants to try these; i didn't
         #self.ceratin_w = torch.nn.Parameter(data=torch.ones(1), requires_grad=use_bias)
@@ -23,34 +24,38 @@ class NC_bias(torch.nn.Module):
     def prepare_weights(self):
         # enforce limits
         #return torch.sigmoid(self.ceratin_w), self.uncertain_mean, self.offset
-        return self.offset,
+        return self.offset if self.use_bias else None
 
     def prep_eval(self):
         self.weights = self.prepare_weights()
 
-    def forward(self, dcd, cd):
+    def forward(self, x):
+        # x = dcd, cd
         # dcd = depth * cd
         # cd = confidence over depth
+
+        B, C,H,W = x.shape
+        dcd, cd = x.view(2, B//2, C,H,W).unbind(0)
+        d = dcd / (cd + self.eps)
 
         if self.use_bias:
             if self.training:
                 #ceratin_w, uncertain_mean,
-                b2, = self.prepare_weights()
+                b2 = self.prepare_weights()
             else:
                 #ceratin_w, uncertain_mean,
-                b2, = self.weights
+                b2 = self.weights
 
-            #dcd = dcd * ceratin_w + uncertain_mean*(1-ceratin_w)
-            #cd = cd * ceratin_w + (1-ceratin_w)
-            d = dcd / (cd + self.eps) + b2
-        else:
-            d = dcd / (cd + self.eps)
+            d = d + b2
 
         return d, cd
 
     def visualize_weights(self, rows, cols, col):
         #ceratin_w, uncertain_mean,
-        b2, = self.prepare_weights()
+
+        if not self.use_bias:
+            return
+        b2 = self.prepare_weights()
 
         idx = col
 

@@ -38,7 +38,7 @@ class SNC(torch.nn.Module):
         self.convs = torch.nn.ModuleList(convs)
         self.pool = Pool(n_c=n_c, kernel_size=4, stride=2, **params)
         self.unpools = torch.nn.ModuleList(unpools)
-        self.bias = Bias(True) if params['use_bias'] else None
+        self.bias = Bias(params['use_bias'])
 
     def prep_eval(self):
         if self.sc_init is not None:
@@ -89,18 +89,14 @@ class SNC(torch.nn.Module):
         if self.lidar_padding:
             x, ece, ce = x[..., self.sum_pad_d:-self.sum_pad_d], ece[..., self.sum_pad_d:-self.sum_pad_d],  ce[..., self.sum_pad_d:-self.sum_pad_d]
 
-        if self.bias is not None:
-            d, cd = self.bias(x.split(d.shape(0), 0))
-        else:
-            dcd, cd = x.split(d.shape[0], 0)
-            d = dcd / (cd + self.eps)
+        d, cd = self.bias(x)
 
         return {'d': d, 'cd': cd, 'e': ece / (ce + self.eps), 'ce': ce}
 
     def streaming_perception(self, d, cd=None, ece=None, ce=None, x=None, rgb=None, **args):
 
-        lower_quantile = np.quantile(d[d > 0].cpu().numpy(), 0.05)
-        upper_quantile = np.quantile(d[d > 0].cpu().numpy(), 0.95)
+        lower_quantile = np.quantile(d[d > 0].numpy(), 0.05)
+        upper_quantile = np.quantile(d[d > 0].numpy(), 0.95)
         cmap = plt.cm.get_cmap('nipy_spectral', 256)
         cmap = np.ndarray.astype(np.array([cmap(i) for i in range(256)])[:, :3] * 255, np.uint8)
         plt.figure()
@@ -111,7 +107,7 @@ class SNC(torch.nn.Module):
             rows = 2 * self.n_stages
 
             plt.subplot(rows, 4, 4 * row + 1)
-            d, cd, s, cs = d.cpu().numpy().squeeze(), cd.cpu().numpy().squeeze(), reduce(ece / (ce + 1e-20), 'b c d h w -> h w', 'prod').cpu().numpy(),reduce(ce, 'b c d h w -> h w', 'mean').cpu().numpy()
+            d, cd, s, cs = d.numpy().squeeze(), cd.numpy().squeeze(), reduce(ece / (ce + 1e-20), 'b c d h w -> h w', 'prod').numpy(),reduce(ce, 'b c d h w -> h w', 'mean').numpy()
             d_img = cmap[np.ndarray.astype(np.interp(d, (lower_quantile, upper_quantile), (0, 255)), np.int_),:]
             d_img[cd == 0,:] = 128
             plt.imshow(d_img)

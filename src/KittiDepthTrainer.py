@@ -15,6 +15,7 @@ import pandas as pd
 from src.losses import *
 from src.error_metrics import *
 from src.KittiDepthDataloader import KittiDepthDataloader
+from torch.utils.data import DataLoader
 
 err_metrics = ['MAE', 'RMSE', 'Delta1', 'Delta2', 'Delta3', 'Parameters', 'BatchDuration', 'wMAE', 'wRMSE', 'wDelta1', 'wDelta2', 'wDelta3']
 
@@ -44,7 +45,7 @@ class KittiDepthTrainer:
 
         lidar_padding = False
         if self.params['model']['reflectance']:
-            lidar_padding=0
+            lidar_padding = 0
         if self.model.lidar_padding:
             lidar_padding = self.model.sum_pad_d
         self.dataloaders, self.dataset_sizes = KittiDepthDataloader(self.params, sets, mode, self.device, lidar_padding=lidar_padding)
@@ -149,6 +150,7 @@ class KittiDepthTrainer:
 
         self.save_checkpoint()
         print("Training Finished.\n")
+        self.dataloaders['val'] = DataLoader(self.dataloaders['val'].dataset, batch_size=1, num_workers=0)
         self.evaluate(evalsets, objective)
 
     def train_step(self, optimizer, objective, sparse_depth, sparse_intensity, gt_depth, rgb, dirs, offsets, im_shape):
@@ -163,7 +165,9 @@ class KittiDepthTrainer:
                 print(param)
                 skip = True
         if skip:
-            self.model.visualize_weights()
+            with torch.inference_mode():
+                self.model.cpu().visualize_weights()
+                plt.show()
         else:
             optimizer.step()
             for param in self.model.parameters():
@@ -251,11 +255,12 @@ class KittiDepthTrainer:
 
         self.model.train(False)
         self.model.prep_eval()
+        self.model = self.model.cpu()
 
         prev_items = []
 
         fig = None
-        with torch.no_grad():
+        with torch.inference_mode():
             while True:
                 # Iterate over data.
                 for (item, sparse_depth, sparse_intensity, gt_depth, rgb, dirs, offsets, im_shape) in self.dataloaders[set]:
@@ -265,8 +270,7 @@ class KittiDepthTrainer:
                         if target_item > len(self.dataloaders[set]):
                             break
                         (item, sparse_depth, sparse_intensity, gt_depth, rgb, dirs, offsets, im_shape) = self.dataloaders[set].dataset[target_item]
-                        sparse_depth, sparse_intensity, gt_depth, rgb, dirs, offsets, im_shape = (
-                             sparse_depth[None,...], torch.tensor(sparse_intensity)[None,...], gt_depth[None,...], rgb[None,...], torch.tensor(dirs)[None,...], torch.tensor(offsets)[None,...], torch.tensor(im_shape)[None,...])
+                        sparse_depth, sparse_intensity, gt_depth, rgb, dirs, offsets, im_shape = (sparse_depth[None,...], torch.tensor(sparse_intensity)[None,...], gt_depth[None,...], rgb[None,...], torch.tensor(dirs)[None,...], torch.tensor(offsets)[None,...], torch.tensor(im_shape)[None,...])
 
                     if fig is None or plt.fignum_exists(fig.number):
                         print(item)
@@ -274,14 +278,14 @@ class KittiDepthTrainer:
 
                         outs = self.model(d=sparse_depth, x=sparse_intensity, rgb=rgb, dirs=dirs, offsets=offsets, im_shape=im_shape)
 
-                        d = outs['d'].squeeze().cpu().numpy()
-                        cd = outs['cd'].squeeze().cpu().numpy()
+                        d = outs['d'].squeeze().numpy()
+                        cd = outs['cd'].squeeze().numpy()
                         if 's' in outs:
-                            s = outs['s'].squeeze().cpu().numpy()
-                            cs = outs['cs'].squeeze().cpu().numpy()
+                            s = outs['s'].squeeze().numpy()
+                            cs = outs['cs'].squeeze().numpy()
                         elif 'e' in outs:
-                            s = outs['e'].squeeze().cpu().numpy().prod(0)
-                            cs = outs['ce'].squeeze().cpu().numpy().mean(0)
+                            s = outs['e'].squeeze().numpy().prod(0)
+                            cs = outs['ce'].squeeze().numpy().mean(0)
 
                         if fig is None:
                             fig,ax = plt.subplots(1 + len(outs) // 2, 2,)
@@ -292,7 +296,7 @@ class KittiDepthTrainer:
                                 a.get_yaxis().set_visible(False)
                         fig.canvas.set_window_title(item)
 
-                        img_rgb = Image.fromarray((rgb.squeeze().cpu().numpy().transpose((1, 2, 0)) * 255).astype(np.uint8))
+                        img_rgb = Image.fromarray((rgb.squeeze().numpy().transpose((1, 2, 0)) * 255).astype(np.uint8))
                         if self.input_rgb:
                             ax[0][1].set_title('input camera image')
                         else:
@@ -300,7 +304,7 @@ class KittiDepthTrainer:
                         ax[0][1].imshow(img_rgb)
                         #img_rgb.save('rgb.png')
 
-                        sparse_depth = sparse_depth.squeeze().cpu().numpy()
+                        sparse_depth = sparse_depth.squeeze().numpy()
                         if color_nine_pixels_for_every_sparse_one:
                                 sparse_depth[1:,:][sparse_depth[1:,:] == 0] = sparse_depth[:-1,:][sparse_depth[1:,:] == 0]
                                 sparse_depth[:-1,:][sparse_depth[:-1,:] == 0] = sparse_depth[1:,:][sparse_depth[:-1,:] == 0]
@@ -387,21 +391,20 @@ class KittiDepthTrainer:
                             elif k == 'enter':
                                 break
                             elif k == 'p':
-                                target_item=item
-                                fig=None
+                                target_item = item
+                                fig = None
                                 plt.close()
                                 (_item, _sparse_depth, _sparse_intensity, _gt_depth, _rgb, _dirs, _offsets, _im_shape) = self.dataloaders[set].dataset[item]
-                                _sparse_depth, _sparse_intensity, _gt_depth, _rgb, _dirs, _offsets, _im_shape = (
-                                    _sparse_depth[None,...], torch.tensor(_sparse_intensity)[None,...], _gt_depth[None,...], _rgb[None,...], torch.tensor(_dirs)[None,...], torch.tensor(_offsets)[None,...], torch.tensor(_im_shape)[None,...])
+                                _sparse_depth, _sparse_intensity, _gt_depth, _rgb, _dirs, _offsets, _im_shape = (_sparse_depth[None,...], torch.tensor(_sparse_intensity)[None,...], _gt_depth[None,...], _rgb[None,...], torch.tensor(_dirs)[None,...], torch.tensor(_offsets)[None,...], torch.tensor(_im_shape)[None,...])
                                 self.model.streaming_perception(d=_sparse_depth, rgb=_rgb, x=_sparse_intensity, dirs=_dirs, offsets=_offsets, im_shape=_im_shape)
                                 mng = plt.get_current_fig_manager()
                                 mng.window.state('zoomed')
                                 plt.tight_layout()
                                 plt.show()
                                 break
-                            elif k=='l':
-                                target_item=item
-                                fig=None
+                            elif k == 'l':
+                                target_item = item
+                                fig = None
                                 plt.close()
                                 self.dataloaders[set].dataset.test_projections(item)
                                 break
@@ -412,4 +415,5 @@ class KittiDepthTrainer:
     def visualize_weights(self):
         checkpoint_path = '{}/weights_run{:04d}_ep{:04d}.pt'.format(self.params_dir,self.run, self.epoch)
         img_file_path = 'images/{}_weights.png'.format(checkpoint_path.replace('.pt','').replace('/weights','').replace('/','_').replace('\\','_'))
-        self.model.visualize_weights(img_file_path)
+        with torch.inference_mode():
+            self.model.cpu().visualize_weights(img_file_path)

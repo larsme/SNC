@@ -13,16 +13,20 @@ training:
   lr_decay: 0.1
   lr_decay_step: 10
   optimizer: Adam
-model:
-  model: NC
+model: 
+  model: NCrec
   rgb: False
   reflectance: False
-  lidar_padding: False
-  n_channels: 1
-  init_method: k
-  symmetric: True
-  use_bias: True
-  pool_disp: False
-  weight_disp: False
-  n_stages: 4
-  conv_kernel_size: 3
+  inner_model:
+      model: NC
+      rgb: False
+      reflectance: False
+      lidar_padding: False
+      n_channels: 1
+      init_method: k
+      symmetric: True
+      use_bias: False
+      pool_disp: False
+      weight_disp: False
+      n_stages: 4
+      conv_kernel_size: 3

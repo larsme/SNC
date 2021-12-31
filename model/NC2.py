@@ -40,22 +40,22 @@ class NC2(torch.nn.Module):
 
         self.weights = self.prepare_weights()
 
-    def forward(self, d, cd=None, ece=None, ce=None, x=None, rgb=None, **args):
+    def forward(self, d, cd=None, **args):
         
         if self.training:
             w_pow_d,  = self.prepare_weights()
         else:
             w_pow_d, = self.weights
             
-        with torch.no_grad:
+        with torch.no_grad():
             if cd is None:
                 cd = (d > 0).float()
-            outs1 = self.stage1(d, cd, **args)
+            outs1 = self.stage1(d, cd,**args)
         cd = cd * torch.pow((outs1['d'] / (d + self.eps)).clamp_max(1), w_pow_d)
-        outs2 = self.stage2(d, cd,  **args)
+        outs2 = self.stage2(d, cd, **args)
         return outs2
 
-    def streaming_perception(self, d, cd=None, ece=None, ce=None, x=None, rgb=None, **args):
+    def streaming_perception(self, d, cd=None, **args):
         
         if self.training:
             w_pow_d, = self.prepare_weights()

@@ -4,8 +4,9 @@ from einops import rearrange, reduce
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 class NC_conv(torch.nn.Module):
-    def __init__(self, init_method='k', n_in=1, n_out=1, kernel_size=1, stride=1, symmetric=True, **kwargs):
+    def __init__(self, init_method='k', n_in=1, n_out=1, kernel_size=3, stride=1, symmetric=True, **kwargs):
         super(NC_conv, self).__init__()
 
         self.stride = stride
@@ -43,7 +44,7 @@ class NC_conv(torch.nn.Module):
         # combine seperable convolution for speed
         w_conv = torch.einsum('o i, i h w -> o i h w', w_channel, w_spatial)
 
-        return w_conv,
+        return w_conv
 
     def prep_eval(self):
         self.weights = self.prepare_weights()
@@ -54,25 +55,25 @@ class NC_conv(torch.nn.Module):
         # cd = confidence over depth
 
         if self.training:
-            w_conv, = self.prepare_weights()
+            w_conv = self.prepare_weights()
         else:
-            w_conv, = self.weights
+            w_conv = self.weights
 
         # NConv without denominator
         return F.conv2d(x, w_conv, padding=self.padding, stride=self.stride)
 
     def visualize_weights(self, rows, cols, col):
-        w_conv_d, = self.prepare_weights()
+        w_conv_d = self.prepare_weights()
 
-        w_spatial_d = reduce(w_conv_d, 'o i h w -> i h w', 'sum').detach()
-        w_channel_d = reduce(w_conv_d, 'o i h w -> o i', 'sum').detach()
+        w_spatial_d = reduce(w_conv_d, 'o i h w -> i h w', 'sum')
+        w_channel_d = reduce(w_conv_d, 'o i h w -> o i', 'sum')
 
         idx = col
 
         if self.kernel_size > 1:
             for c in range(self.n_in):
                 ax = plt.subplot(rows, cols, idx)
-                plt.imshow(w_spatial_d[c, :, :].cpu())
+                plt.imshow(w_spatial_d[c, :, :])
                 plt.xlabel('w', fontsize=min(10,100 / rows))
                 plt.ylabel('h', fontsize=min(10,100 / rows))
                 plt.xticks([])
@@ -86,9 +87,29 @@ class NC_conv(torch.nn.Module):
             ax = plt.subplot(rows, cols, idx)
             plt.xlabel('in', fontsize=min(10,100 / rows))
             plt.ylabel('out', fontsize=min(10,100 / rows))
-            plt.imshow(w_channel_d.cpu())
+            plt.imshow(w_channel_d)
             plt.xticks([])
             plt.yticks([])
             idx+=cols
         elif self.n_out > 1:
             idx+=cols
+
+            
+class NC_disp_conv(NC_conv):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)        
+        self.eps = 1e-20
+
+    def forward(self, x):     
+        B, C, H, W = x.shape
+        dcd, cd = x.view(2, B // 2, C, H, W).unbind(0) 
+        cd_div_d = cd**2 / (dcd + self.eps)
+        x = torch.cat((cd, cd_div_d), 0).view(B,C,H,W)
+
+        x = super().forward(x)
+          
+        B, C, H, W = x.shape
+        dcd, cd = x.view(2, B // 2, C, H, W).unbind(0) 
+        ddcd = dcd**2 / (cd + self.eps)
+        x = torch.cat((ddcd, dcd), 0).view(B,C,H,W)
+        return x

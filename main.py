@@ -34,19 +34,21 @@ if __name__ == "__main__":
     if args.mode == 'results':
         visualize_results(**vars(args))
     else:
-        max_run = args.run + args.runs - 1
-        for run in range(args.run, max_run + 1):
-            args.run = run
+        start_run = args.run
+        for params_file in glob.glob(args.params_dir + '/params.yaml'):
+            args.params_dir = os.path.dirname(params_file)
+            print(args.params_dir)
+            for args.run in range(start_run, start_run + args.runs):
 
-            trainer = KittiDepthTrainer(**vars(args))
+                trainer = KittiDepthTrainer(**vars(args))
 
-            if args.mode == 'train':
-                trainer.train(evaluate_all_epochs=args.evaluate_all_epochs)
-            elif args.mode == 'predictions':
-                trainer.display_predictions()
-            elif args.mode == 'count_parameters':
-                trainer.count_parameters()
-            elif args.mode == 'weights':
-                trainer.visualize_weights()
-                if run == max_run:
-                    plt.show()
+                if args.mode == 'train':
+                    trainer.train(evaluate_all_epochs=args.evaluate_all_epochs)
+                elif args.mode == 'predictions':
+                    trainer.display_predictions()
+                elif args.mode == 'count_parameters':
+                    trainer.count_parameters()
+                elif args.mode == 'weights':
+                    trainer.visualize_weights()
+                    if run == max_run:
+                        plt.show()

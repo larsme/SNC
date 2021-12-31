@@ -2,7 +2,7 @@ paths:
   kitti_depth_dataset_dir: data/kitti_depth
   kitti_rgb_dataset_dir: data/kitti_raw
 training:
-  num_epochs: 20
+  num_epochs: 15
   device: cuda
   train_on: 10000
   train_batch_size: 50
@@ -15,7 +15,7 @@ training:
   optimizer: Adam
 model: 
   model: NC2
-  inner_model_path: workspace\NC\NC\checkpoint_run0000_ep0020.pt
+  inner_model_path: workspace\NC\NC\checkpoint_run0000_ep0015.pt
   rgb: False
   reflectance: False
   inner_model:
@@ -28,4 +28,6 @@ model:
       symmetric: True
       use_bias: False
       pool_disp: False
+      weight_disp: False
       n_stages: 4
+      conv_kernel_size: 3

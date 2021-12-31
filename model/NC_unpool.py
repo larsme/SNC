@@ -68,14 +68,14 @@ class NC_unpool(torch.nn.Module):
     def visualize_weights(self, rows, cols, col):
         w_conv_d, w_skip_d = self.prepare_weights()
 
-        w_spatial_d = reduce(w_conv_d, 'o i h w -> i h w', 'sum').detach()
-        w_channel_d = reduce(w_conv_d, 'o i h w -> o i', 'sum').detach()
+        w_spatial_d = reduce(w_conv_d, 'o i h w -> i h w', 'sum')
+        w_channel_d = reduce(w_conv_d, 'o i h w -> o i', 'sum')
 
         idx = col
         if self.kernel_size > 1:
             for c in range(self.n_c):
                 ax = plt.subplot(rows, cols, idx)
-                plt.imshow(w_spatial_d[c, :, :].cpu())
+                plt.imshow(w_spatial_d[c, :, :])
                 plt.xlabel('w', fontsize=min(10,100 / rows))
                 plt.ylabel('h', fontsize=min(10,100 / rows))
                 plt.xticks([])
@@ -86,14 +86,14 @@ class NC_unpool(torch.nn.Module):
             ax = plt.subplot(rows, cols, idx)
             plt.xlabel('in', fontsize=min(10,100 / rows))
             plt.ylabel('out', fontsize=min(10,100 / rows))
-            plt.imshow(w_channel_d[:, :].cpu())
+            plt.imshow(w_channel_d[:, :])
             plt.xticks([])
             plt.yticks([])
             idx+=cols
 
         ax = plt.subplot(rows, cols, idx)
-        plt.imshow(w_skip_d[:,:,0,0].cpu().detach())
-        for (j,i),label in np.ndenumerate(w_skip_d[:,:, 0, 0].cpu().detach()):
+        plt.imshow(w_skip_d[:,:,0,0])
+        for (j,i),label in np.ndenumerate(w_skip_d[:,:, 0, 0]):
             ax.text(i,j,'{:.02f}'.format(label),ha='center',va='center', fontsize=min(10,80 / rows), color='tomato')
         plt.xticks([])
         plt.yticks([])

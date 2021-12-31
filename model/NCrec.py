@@ -33,7 +33,7 @@ class NCrec(torch.nn.Module):
         self.inner_model.prep_eval()
         self.weights = self.prepare_weights()
 
-    def forward(self, d, cd=None, ece=None, ce=None, x=None, rgb=None, **args):
+    def forward(self, d, cd=None, **args):
         
         if self.training:
             w_pow_d,  = self.prepare_weights()
@@ -48,7 +48,7 @@ class NCrec(torch.nn.Module):
         outs2 = self.inner_model(d, cd,  **args)
         return outs2
 
-    def streaming_perception(self, d, cd=None, ece=None, ce=None, x=None, rgb=None, **args):
+    def streaming_perception(self, d, cd=None, **args):
         
         if self.training:
             w_pow_d, = self.prepare_weights()

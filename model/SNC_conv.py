@@ -280,11 +280,11 @@ class SNC_conv(torch.nn.Module):
     def visualize_weights(self, rows, cols, col):
         w_conv_d, w_prop_e, w_pow_e, w_conv_e, w_channel_e = self.prepare_weights()
 
-        w_conv_d = rearrange(w_conv_d, 'o i (h w) -> o i h w', h=self.kernel_size).detach()
+        w_conv_d = rearrange(w_conv_d, 'o i (h w) -> o i h w', h=self.kernel_size)
         w_spatial_d = reduce(w_conv_d, 'o i h w -> i h w', 'sum')
         w_channel_d = reduce(w_conv_d, 'o i h w -> o i', 'sum')
 
-        w_conv_e = rearrange(w_conv_e, '(o d2) (i d1) h w -> o d2 i d1 h w', d1=4, d2=4).detach()
+        w_conv_e = rearrange(w_conv_e, '(o d2) (i d1) h w -> o d2 i d1 h w', d1=4, d2=4)
         w_spatial_e = reduce(w_conv_e, 'o d2 i d1 h w -> i d1 h w', 'sum')
         if self.n_in >= self.n_out:
             w_channel_e = reduce(w_conv_e, 'o d2 i d1 h w -> o i', 'sum')
@@ -294,8 +294,8 @@ class SNC_conv(torch.nn.Module):
 
         for c in range(self.n_in):
             ax = plt.subplot(rows, cols, idx)
-            plt.imshow(w_pow_e[c, :,:].cpu().detach())
-            for (j,i),label in np.ndenumerate(w_pow_e[c, :,:].cpu().detach()):
+            plt.imshow(w_pow_e[c, :,:])
+            for (j,i),label in np.ndenumerate(w_pow_e[c, :,:]):
                 ax.text(i,j,'{:.02f}'.format(label),ha='center',va='center', fontsize=min(10,60 / rows), color='tomato')
             plt.xticks([0,1,2,3],[r'$^a / _b$',r'$\frac{a}{b}$',r'$_b \backslash ^a$','b|a'], fontsize=min(10,100 / rows))
             plt.yticks([0,1], [r'$\frac{a}{b}$',r'$\frac{b}{a}$'], fontsize=min(10,100 / rows))
@@ -305,8 +305,8 @@ class SNC_conv(torch.nn.Module):
             idx+=cols
 
         ax = plt.subplot(rows, cols, idx)
-        plt.imshow(w_prop_e[0,:,:, 0, 0].cpu().detach())
-        for (j,i),label in np.ndenumerate(w_prop_e[0,:,:, 0, 0].cpu().detach()):
+        plt.imshow(w_prop_e[0,:,:, 0, 0])
+        for (j,i),label in np.ndenumerate(w_prop_e[0,:,:, 0, 0]):
             ax.text(i,j,'{:.02f}'.format(label),ha='center',va='center', fontsize=min(10,80 / rows), color='tomato')
         plt.xticks([0,1,2,3],['/','-','\\','|'], fontsize=min(10,100 / rows))
         plt.yticks([])
@@ -319,7 +319,7 @@ class SNC_conv(torch.nn.Module):
             for d in range(4):
                 if self.kernel_size > 1:
                     ax = plt.subplot(rows, cols, idx)
-                    plt.imshow(w_spatial_e[c, d, :, :].cpu())
+                    plt.imshow(w_spatial_e[c, d, :, :])
                     plt.xlabel('w', fontsize=min(10,100 / rows))
                     plt.ylabel('h', fontsize=min(10,100 / rows))
                     plt.xticks([])
@@ -331,7 +331,7 @@ class SNC_conv(torch.nn.Module):
             ax = plt.subplot(rows, cols, idx)
             plt.xlabel('in', fontsize=min(10,100 / rows))
             plt.ylabel('out', fontsize=min(10,100 / rows))
-            plt.imshow(w_channel_e.cpu().detach())
+            plt.imshow(w_channel_e)
             plt.xticks([])
             plt.yticks([])
             idx+=cols
@@ -340,7 +340,7 @@ class SNC_conv(torch.nn.Module):
 
         for c in range(self.n_in):
             ax = plt.subplot(rows, cols, idx)
-            plt.imshow(w_dir_e[:,c, :].cpu())
+            plt.imshow(w_dir_e[:,c, :])
             plt.xticks([0,1,2,3],['/','-','\\','|'], fontsize=min(10,100 / rows))
             plt.yticks([0,1,2,3],['/','-','\\','|'], fontsize=min(10,100 / rows))
             ax.tick_params(length=0)
@@ -353,7 +353,7 @@ class SNC_conv(torch.nn.Module):
         if self.kernel_size > 1:
             for c in range(self.n_in):
                 ax = plt.subplot(rows, cols, idx)
-                plt.imshow(w_spatial_d[c, :, :].cpu())
+                plt.imshow(w_spatial_d[c, :, :])
                 plt.xlabel('w', fontsize=min(10,100 / rows))
                 plt.ylabel('h', fontsize=min(10,100 / rows))
                 plt.xticks([])
@@ -367,7 +367,7 @@ class SNC_conv(torch.nn.Module):
             ax = plt.subplot(rows, cols, idx)
             plt.xlabel('in', fontsize=min(10,100 / rows))
             plt.ylabel('out', fontsize=min(10,100 / rows))
-            plt.imshow(w_channel_d[:, :].cpu())
+            plt.imshow(w_channel_d[:, :])
             plt.xticks([])
             plt.yticks([])
             idx+=cols

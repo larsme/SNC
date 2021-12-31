@@ -83,7 +83,7 @@ class SC_init(torch.nn.Module):
         else:
             w_conv, = self.weights
 
-        w_conv = rearrange(w_conv, '(d c) 1 h w -> d c h w', d=4).cpu().detach()
+        w_conv = rearrange(w_conv, '(d c) 1 h w -> d c h w', d=4)
         idx = col
 
         for d in range(4):    

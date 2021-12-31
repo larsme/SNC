@@ -2,7 +2,7 @@ paths:
   kitti_depth_dataset_dir: data/kitti_depth
   kitti_rgb_dataset_dir: data/kitti_raw
 training:
-  num_epochs: 20
+  num_epochs: 15
   device: cuda
   train_on: 10000
   train_batch_size: 49
